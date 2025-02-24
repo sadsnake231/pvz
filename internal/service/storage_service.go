@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	"gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/domain"
-	"gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/storage"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage"
 )
 
 type StorageService struct {

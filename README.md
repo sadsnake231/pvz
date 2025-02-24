@@ -1,3 +1,14 @@
+# Пример json файла с заказми от курьера
+
+```json
+[
+    {"id": "1500", "recipient_id": "15", "expiry": "2025-12-31"},
+    {"id": "1601", "recipient_id": "16", "expiry": "2024-11-30"}
+]
+```
+# Пример json файла - хранилища даннвх
+
+```json
 [
   {
     "id": "order1",
@@ -33,12 +44,14 @@
     "expiry": "2024-03-02T00:00:00Z",
     "status": "stored",
     "UpdatedAt": "2025-02-22T13:39:23.886836111+03:00"
-  },
-  {
-    "id": "41",
-    "recipient_id": "user",
-    "expiry": "2025-03-02T00:00:00Z",
-    "status": "refunded",
-    "UpdatedAt": "2025-02-25T01:22:36.085904248+03:00"
   }
 ]
+
+```
+
+# Пример файла .env
+
+```
+ORDER_STORAGE_PATH=./data/orders.json
+
+```

@@ -1,4 +1,4 @@
-module gitlab.ozon.dev/sadsnake2311/homework/hw-1
+module gitlab.ozon.dev/sadsnake2311/homework
 
 go 1.23.6
 

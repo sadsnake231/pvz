@@ -1,6 +1,6 @@
 package storage
 
-import "gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/domain"
+import "gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 
 type OrderStorage interface {
 	SaveOrder	(order domain.Order) error

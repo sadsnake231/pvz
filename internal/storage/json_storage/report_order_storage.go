@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"sort"
 
-	"gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 )
 
 func (s *JSONOrderStorage) GetUserOrders(userID string, limit int, status string, offset int) ([]domain.Order, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 
 	orders, err := s.readAll()
 	if err != nil {
@@ -52,8 +51,7 @@ func (s *JSONOrderStorage) GetUserOrders(userID string, limit int, status string
 }
 
 func (s *JSONOrderStorage) GetRefundedOrders(limit int, offset int) ([]domain.Order, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 
 	orders, err := s.readAll()
 	if err != nil {
@@ -85,8 +83,7 @@ func (s *JSONOrderStorage) GetRefundedOrders(limit int, offset int) ([]domain.Or
 }
 
 func (s *JSONOrderStorage) GetOrderHistory() ([]domain.Order, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 
 	orders, err := s.readAll()
 	if err != nil {

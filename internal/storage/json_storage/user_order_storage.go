@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 )
 
 func (s *JSONOrderStorage) IssueOrders(userID string, orderIDs []string) (string, []string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 
 	issuedOrderIDs := make([]string, 0)
 
@@ -57,8 +56,7 @@ func (s *JSONOrderStorage) IssueOrders(userID string, orderIDs []string) (string
 }
 
 func (s *JSONOrderStorage) RefundOrders(userID string, orderIDs []string) (string, []string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 
 	refundedOrderIDs := make([]string, 0)
 

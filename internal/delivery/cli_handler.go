@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"github.com/rivo/tview"
-	"gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/domain"
-	"gitlab.ozon.dev/sadsnake2311/homework/hw-1/internal/service"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
 )
 
 type CLIHandler interface {
 	HandleCommand(input string) error
-	HandleHelp()
 }
 
 type cliHandler struct {
@@ -48,12 +47,22 @@ func (h *cliHandler) HandleCommand(input string) error {
 				return err
 			}
 			fmt.Printf("Заказ %s успешно возвращен курьеру!\n", id)
-		case "issue":
-			userID, orders, err := h.HandleIssueOrders(args[:1], args[1:])
-			fmt.Printf("Пользователь: %s\nУспешно выданные заказы: %s\n Ошибка: %v\n", userID, strings.Join(orders, ", "), err)
-		case "refund":
-			userID, orders, err := h.HandleRefundOrders(args[:1], args[1:])
-			fmt.Printf("Пользователь: %s\nУспешно возвращенные заказы: %s\n Ошибка: %v\n", userID, strings.Join(orders, ", "), err)
+		case "issue/refund":
+			if len(args) < 3 {
+				return fmt.Errorf("Ожидаются минимум 3 аргумента: команда, id пользователя, id заказа")
+			}
+			var userID string
+			var orders []string
+			var err error
+
+			if args[0] == "issue"{
+				userID, orders, err = h.HandleIssueOrders(args[1], args[2:])
+			} else if args[0] == "refund" {
+				userID, orders, err = h.HandleRefundOrders(args[1], args[2:])
+			} else {
+				return fmt.Errorf("Неверная команда")
+			}
+			fmt.Printf("Пользователь: %s\nУспешно обработанные заказы: %s\n Ошибка: %v\n", userID, strings.Join(orders, ", "), err)
 		case "list":
 			userID := args[0]
 			n := -1
@@ -122,6 +131,8 @@ func (h *cliHandler) HandleCommand(input string) error {
 				return err
 			}
 			fmt.Println("Заказы успешно приняты!")
+		case "help":
+			h.HandleHelp()
 		default:
 			return fmt.Errorf("неизвестная команда: %s", command)
 	}
@@ -132,15 +143,15 @@ func (h *cliHandler) HandleCommand(input string) error {
 func (h *cliHandler) HandleHelp() {
 	helpText := `
 	Доступные команды:
-	accept <ID> <RecipientID> <Expiry> - Принять заказ
+	accept <ID> <RecipientID> <Expiry> - Принять заказ (Expiry вводится в формате YYYY-MM-DD)
 	return <ID> - Вернуть заказ доставке
-	issue <UserID> <OrderID1> <OrderID2> ... - Выдать заказы пользователю
-	refund <UserID> <OrderID1> <OrderID2> ... - Вернуть заказы от пользователя
+	issue/refund <Command> <UserID> <OrderID1> <OrderID2> ... - Выдать заказы или вернуть заказы (command = "issue" или command = "refund")
 	list <UserID> [n] [yes] - Получить список заказов пользователя со скроллом (выход через Ctrl+C)
 	refunded [limit] - Получить список возвращенных заказов с постраничной пагинацией
 	history - Получить историю заказов
 	json <filename> - Принять заказы из JSON файла. Файл должен лежать в корне. Пример: json delivery.json
 	help - Показать эту справку
+	exit (или ctrl+c)- завершение работы
 	`
 	fmt.Println(helpText)
 }
@@ -180,30 +191,20 @@ func (h *cliHandler) HandleReturnOrder(args []string) (string, error) {
 	return h.storageService.ReturnOrder(id)
 }
 
-func (h *cliHandler) HandleIssueOrders(userArgs, idsArgs []string) (string, []string, error) {
-	if len(userArgs) != 1 {
-		return "", nil, fmt.Errorf("ожидается 1 аргумент: ID")
-	}
-
+func (h *cliHandler) HandleIssueOrders(id string, idsArgs []string) (string, []string, error) {
 	if len(idsArgs) == 0 {
 		return "", nil, fmt.Errorf("список ID заказов не может быть пустым")
 	}
-
-	id := userArgs[0]
 
 	return h.storageService.IssueOrders(id, idsArgs)
 }
 
-func (h *cliHandler) HandleRefundOrders(userArgs, idsArgs []string) (string, []string, error) {
-	if len(userArgs) != 1 {
-		return "", nil, fmt.Errorf("ожидается 1 аргумент: ID")
-	}
+func (h *cliHandler) HandleRefundOrders(id string, idsArgs []string) (string, []string, error) {
 
 	if len(idsArgs) == 0 {
 		return "", nil, fmt.Errorf("список ID заказов не может быть пустым")
 	}
 
-	id := userArgs[0]
 
 	return h.storageService.RefundOrders(id, idsArgs)
 }
