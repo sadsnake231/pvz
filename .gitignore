@@ -1,2 +1,2 @@
 .env
-data/orders.json
+*.json
