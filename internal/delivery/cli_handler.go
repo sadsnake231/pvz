@@ -43,7 +43,11 @@ func (h *CLIHandler) HandleCommand(input string) error {
 
 		case "issue/refund":
 			res, err := h.service.IssueRefundOrders(args)
-			fmt.Println(res + "\n" + err.Error())
+			if err != nil {
+				fmt.Println(res + "\n" + err.Error())
+				return nil
+			}
+			fmt.Println(res + "\n")
 			return nil
 
 		case "list":
@@ -129,6 +133,14 @@ func (h *CLIHandler) displayOrders(orders []domain.Order) {
 }
 
 func formatOrder(order domain.Order) string {
-	return fmt.Sprintf("ID: %s, Status: %s, Expiry: %s, Updated: %s",
-			   order.ID, order.Status, order.Expiry.Format("2006-01-02"), order.UpdatedAt.Format("2006-01-02 15:04:05"))
+	return fmt.Sprintf(
+		"ID: %s, Status: %s, Expiry: %s, Updated: %s, Price: %.2f, Weight: %.2f, Packaging: %s",
+		order.ID,
+		order.Status,
+		order.Expiry.Format("2006-01-02"),
+		order.UpdatedAt.Format("2006-01-02 15:04:05"),
+		order.FinalPrice,
+		order.Weight,
+		order.Packaging,
+	)
 }
