@@ -15,11 +15,15 @@ const (
 )
 
 type Order struct {
-	ID          string       `json:"id"`
-	RecipientID string       `json:"recipient_id"`
-	Expiry      time.Time    `json:"expiry"`
-	Status      OrderStatus  `json:"status"`
-	UpdatedAt   time.Time	 `json:"UpdatedAt"`
+	ID          	string       	`json:"id"`
+	RecipientID 	string       	`json:"recipient_id"`
+	Expiry      	time.Time    	`json:"expiry"`
+	Status      	OrderStatus  	`json:"status"`
+	UpdatedAt   	time.Time	`json:"UpdatedAt"`
+	BasePrice   	float64	 	`json:"base_price"`
+	FinalPrice  	float64	 	`json:"final_price"`
+	Weight	    	float64	 	`json:"weight"`
+	Packaging   	PackagingType   `json:"packaging"`
 }
 
 var (
@@ -29,7 +33,7 @@ var (
 
 	ErrNotFoundOrder	= errors.New("Заказа с таким ID не существует")
 	ErrNotStoredOrder	= errors.New("Заказа нет на складе")
-	ErrUserNoOrders		= errors.New("У этого пользователя не обнаружено заказов, готовых к выдаче или возврату")
+	ErrUserNoOrders		= errors.New("Введенные заказы не готовы к выдаче или возврату")
 	ErrRefundPeriodExpired  = errors.New("Прошло 48 суток с момента выдачи заказа")
 
 )

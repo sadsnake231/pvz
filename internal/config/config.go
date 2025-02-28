@@ -11,7 +11,6 @@ type Config struct {
 }
 
 func Load() *Config {
-	// Загружаем .env файл
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Ошибка загрузки .env файла: %v", err)
 	}
@@ -21,7 +20,6 @@ func Load() *Config {
 	}
 }
 
-// getEnv возвращает значение переменной окружения или значение по умолчанию
 func getEnv(key, defaultValue string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {

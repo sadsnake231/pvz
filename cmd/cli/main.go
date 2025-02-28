@@ -5,32 +5,46 @@ import (
 	"fmt"
 	"os"
 
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/config"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/delivery"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/json_storage"
-	"gitlab.ozon.dev/sadsnake2311/homework/internal/config"
 )
 
 func main() {
 	cfg := config.Load()
 
-	storage := jsonstorage.NewJSONOrderStorage(cfg.OrderStoragePath)
-	service := service.NewStorageService(storage, storage, storage)
-	cliHandler := delivery.NewCLIHandler(service)
+	jsonStorage := jsonstorage.NewJSONOrderStorage(cfg.OrderStoragePath)
+
+	repo := repository.NewRepository(
+		jsonStorage,
+		jsonStorage,
+		jsonStorage,
+	)
+
+	service := service.NewStorageService(repo)
+
+	cli := delivery.NewCLIHandler(service)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
+	fmt.Println("Добро пожаловать в систему управления заказами!")
+	fmt.Println("Введите 'help' для получения списка команд.")
+
 	for {
-		fmt.Print("Введите команду (или 'help' для справки): ")
-		scanner.Scan()
+		fmt.Print("> ")
+		if !scanner.Scan() {
+			break
+		}
 		input := scanner.Text()
 
 		if input == "exit" {
-			fmt.Print("До встречи!\n")
+			fmt.Println("Завершение работы...")
 			return
 		}
 
-		if err := cliHandler.HandleCommand(input); err != nil {
+		if err := cli.HandleCommand(input); err != nil {
 			fmt.Printf("Ошибка: %v\n", err)
 		}
 	}
