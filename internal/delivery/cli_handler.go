@@ -26,89 +26,126 @@ func (h *CLIHandler) HandleCommand(input string) error {
 	cmd := args[0]
 	args = args[1:]
 
-	switch cmd {
-		case "accept":
-			res, err := h.service.AcceptOrder(args)
-			if err != nil {
-				return err
-			}
-			fmt.Println(res)
-
-		case "return":
-			res, err := h.service.ReturnOrder(args)
-			if err != nil {
-				return err
-			}
-			fmt.Println(res)
-
-		case "issue/refund":
-			res, err := h.service.IssueRefundOrders(args)
-			if err != nil {
-				fmt.Println(res + "\n" + err.Error())
-				return nil
-			}
-			fmt.Println(res + "\n")
-			return nil
-
-		case "list":
-			orders, err := h.service.GetUserOrders(args)
-			if err != nil {
-				return err
-			}
-			h.displayOrdersWithScroll(orders)
-
-		case "refunded":
-			limit := 10
-			if len(args) > 0 {
-				limit, _ = strconv.Atoi(args[0])
-			}
-			offset := 0
-			for {
-				orders, err := h.service.GetRefundedOrders(limit, offset)
-				if err != nil {
-					return err
-				}
-				if len(orders) == 0 {
-					fmt.Println("Больше нет возвращенных заказов.")
-					break
-				}
-				for _, order := range orders {
-					fmt.Println(formatOrder(order))
-				}
-				fmt.Print("Нажмите Enter для следующей страницы или 'q' для выхода: ")
-				var input string
-				fmt.Scanln(&input)
-				if input == "q" {
-					break
-				}
-				offset += limit
-			}
-
-
-		case "history":
-			orders, err := h.service.GetOrderHistory()
-			if err != nil {
-				return err
-			}
-			h.displayOrders(orders)
-
-		case "json":
-			res, err := h.service.AcceptOrdersFromJSONFile(args[0])
-			if err != nil {
-				return err
-			}
-			fmt.Println(res)
-
-		case "help":
-			helpText, err := h.service.Help()
-			if err != nil {
-				return err
-			}
-			fmt.Println(helpText)
-
-		default:
-			return fmt.Errorf("неизвестная команда: %s", cmd)
+	handlers := map[string]func([]string) error{
+		"accept":       h.handleAccept,
+		"return":       h.handleReturn,
+		"issue/refund": h.handleIssueRefund,
+		"list":         h.handleList,
+		"refunded":     h.handleRefunded,
+		"history":      h.handleHistory,
+		"json":         h.handleJSON,
+		"help":         h.handleHelp,
 	}
+
+	handler, ok := handlers[cmd]
+	if !ok {
+		return fmt.Errorf("неизвестная команда: %s", cmd)
+	}
+
+	return handler(args)
+}
+
+func (h *CLIHandler) handleAccept(args []string) error {
+	res, err := h.service.AcceptOrder(args)
+	if err != nil {
+		return err
+	}
+	fmt.Println(res)
+	return nil
+}
+
+func (h *CLIHandler) handleReturn(args []string) error {
+	res, err := h.service.ReturnOrder(args)
+	if err != nil {
+		return err
+	}
+	fmt.Println(res)
+	return nil
+}
+
+func (h *CLIHandler) handleIssueRefund(args []string) error {
+	res, err := h.service.IssueRefundOrders(args)
+	if err != nil {
+		fmt.Println(res + "\n" + err.Error())
+		return nil
+	}
+	fmt.Println(res + "\n")
+	return nil
+}
+
+func (h *CLIHandler) handleList(args []string) error {
+	orders, err := h.service.GetUserOrders(args)
+	if err != nil {
+		return err
+	}
+	h.displayOrdersWithScroll(orders)
+	return nil
+}
+
+func (h *CLIHandler) handleRefunded(args []string) error {
+	limit := 10
+	if len(args) > 0 {
+		limit, _ = strconv.Atoi(args[0])
+	}
+
+	offset := 0
+	for {
+		orders, err := h.service.GetRefundedOrders(limit, offset)
+		if err != nil {
+			return err
+		}
+
+		if len(orders) == 0 {
+			fmt.Println("Больше нет возвращенных заказов.")
+			break
+		}
+
+		for _, order := range orders {
+			fmt.Println(formatOrder(order))
+		}
+
+		if shouldExit := h.askForContinue(); shouldExit {
+			break
+		}
+		offset += limit
+	}
+	return nil
+}
+
+func (h *CLIHandler) askForContinue() bool {
+	fmt.Print("Нажмите Enter для следующей страницы или 'q' для выхода: ")
+	var input string
+	fmt.Scanln(&input)
+	return input == "q"
+}
+
+func (h *CLIHandler) handleHistory(args []string) error {
+	orders, err := h.service.GetOrderHistory()
+	if err != nil {
+		return err
+	}
+	h.displayOrders(orders)
+	return nil
+}
+
+func (h *CLIHandler) handleJSON(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("укажите имя файла")
+	}
+	res, err := h.service.AcceptOrdersFromJSONFile(args[0])
+	if err != nil {
+		return err
+	}
+	fmt.Println(res)
+	return nil
+}
+
+func (h *CLIHandler) handleHelp(args []string) error {
+	helpText, err := h.service.Help()
+	if err != nil {
+		return err
+	}
+	fmt.Println(helpText)
 	return nil
 }
 
