@@ -1,20 +1,32 @@
 package delivery
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"time"
+
 	"github.com/rivo/tview"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
 )
 
 type CLIHandler struct {
-	service service.StorageService
+	service  service.StorageService
+	handlers map[string]command
+}
+
+type command struct {
+	Handler     func([]string) error
+	Description string
 }
 
 func NewCLIHandler(service service.StorageService) *CLIHandler {
-	return &CLIHandler{service: service}
+	h := &CLIHandler{service: service}
+	h.handlers = h.initHandlers()
+	return h
 }
 
 func (h *CLIHandler) HandleCommand(input string) error {
@@ -26,27 +38,71 @@ func (h *CLIHandler) HandleCommand(input string) error {
 	cmd := args[0]
 	args = args[1:]
 
-	handlers := map[string]func([]string) error{
-		"accept":       h.handleAccept,
-		"return":       h.handleReturn,
-		"issue/refund": h.handleIssueRefund,
-		"list":         h.handleList,
-		"refunded":     h.handleRefunded,
-		"history":      h.handleHistory,
-		"json":         h.handleJSON,
-		"help":         h.handleHelp,
-	}
-
-	handler, ok := handlers[cmd]
+	command, ok := h.handlers[cmd]
 	if !ok {
 		return fmt.Errorf("неизвестная команда: %s", cmd)
 	}
 
-	return handler(args)
+	return command.Handler(args)
 }
 
 func (h *CLIHandler) handleAccept(args []string) error {
-	res, err := h.service.AcceptOrder(args)
+	if len(args) != 6 {
+		return fmt.Errorf("ожидается 6 аргументов: ID, RecipientID, Expiry, BasePrice, Weight, Packaging")
+	}
+
+	expiry, err := time.Parse("2006-01-02", args[2])
+	if err != nil {
+		return fmt.Errorf("неверный формат даты: %v", err)
+	}
+
+	basePrice, err := strconv.ParseFloat(args[3], 64)
+	if err != nil {
+		return fmt.Errorf("неверный формат цены: %v", err)
+	}
+
+	weight, err := strconv.ParseFloat(args[4], 64)
+	if err != nil {
+		return fmt.Errorf("неверный формат веса: %v", err)
+	}
+
+	packaging := domain.PackagingType(args[5])
+
+	order := domain.Order{
+		ID:          args[0],
+		RecipientID: args[1],
+		Expiry:      expiry.Add(24 * time.Hour).UTC(),
+		BasePrice:   basePrice,
+		Weight:      weight,
+		Packaging:   packaging,
+		Status:      domain.StatusStored,
+		UpdatedAt:   time.Now().UTC(),
+	}
+
+	res, err := h.service.AcceptOrder(order)
+	if err != nil {
+		return err
+	}
+	fmt.Println(res)
+	return nil
+}
+
+func (h *CLIHandler) handleJSON(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("укажите имя файла")
+	}
+
+	file, err := os.ReadFile(args[0])
+	if err != nil {
+		return fmt.Errorf("ошибка при чтении файла: %v", err)
+	}
+
+	var orders []domain.Order
+	if err := json.Unmarshal(file, &orders); err != nil {
+		return fmt.Errorf("ошибка при парсинге JSON: %v", err)
+	}
+
+	res, err := h.service.AcceptOrdersFromJSON(orders)
 	if err != nil {
 		return err
 	}
@@ -55,7 +111,11 @@ func (h *CLIHandler) handleAccept(args []string) error {
 }
 
 func (h *CLIHandler) handleReturn(args []string) error {
-	res, err := h.service.ReturnOrder(args)
+	if len(args) != 1 {
+		return fmt.Errorf("ожидается 1 аргумент: ID")
+	}
+
+	res, err := h.service.ReturnOrder(args[0])
 	if err != nil {
 		return err
 	}
@@ -64,17 +124,56 @@ func (h *CLIHandler) handleReturn(args []string) error {
 }
 
 func (h *CLIHandler) handleIssueRefund(args []string) error {
-	res, err := h.service.IssueRefundOrders(args)
+	if len(args) < 3 {
+		return fmt.Errorf("ожидаются min 3 аргумента: команда, id пользователя, id заказа")
+	}
+
+	commandType := args[0]
+	userID := args[1]
+	orderIDs := args[2:]
+
+	var result string
+	var err error
+
+	switch commandType {
+	case "issue":
+		result, err = h.service.IssueOrders(userID, orderIDs)
+	case "refund":
+		result, err = h.service.RefundOrders(userID, orderIDs)
+	default:
+		return fmt.Errorf("неверная команда: %s", commandType)
+	}
+
 	if err != nil {
-		fmt.Println(res + "\n" + err.Error())
+		fmt.Println(result + "\n" + err.Error())
 		return nil
 	}
-	fmt.Println(res + "\n")
+	fmt.Println(result + "\n")
 	return nil
 }
 
 func (h *CLIHandler) handleList(args []string) error {
-	orders, err := h.service.GetUserOrders(args)
+	if len(args) == 0 || len(args) > 3 {
+		return fmt.Errorf("ожидается от 1 до 3 аргументов")
+	}
+
+	userID := args[0]
+	limit := -1
+	showStored := false
+
+	if len(args) > 1 {
+		var err error
+		limit, err = strconv.Atoi(args[1])
+		if err != nil {
+			return fmt.Errorf("неверный формат лимита: %v", err)
+		}
+	}
+
+	if len(args) > 2 {
+		showStored = (args[2] == "yes")
+	}
+
+	orders, err := h.service.GetUserOrders(userID, limit, showStored)
 	if err != nil {
 		return err
 	}
@@ -128,24 +227,11 @@ func (h *CLIHandler) handleHistory(args []string) error {
 	return nil
 }
 
-func (h *CLIHandler) handleJSON(args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("укажите имя файла")
-	}
-	res, err := h.service.AcceptOrdersFromJSONFile(args[0])
-	if err != nil {
-		return err
-	}
-	fmt.Println(res)
-	return nil
-}
-
 func (h *CLIHandler) handleHelp(args []string) error {
-	helpText, err := h.service.Help()
-	if err != nil {
-		return err
+	fmt.Println("Доступные команды:")
+	for cmd, details := range h.handlers {
+		fmt.Printf("- %s: %s\n", cmd, details.Description)
 	}
-	fmt.Println(helpText)
 	return nil
 }
 
@@ -161,8 +247,6 @@ func (h *CLIHandler) displayOrdersWithScroll(orders []domain.Order) {
 	}
 }
 
-
-
 func (h *CLIHandler) displayOrders(orders []domain.Order) {
 	for _, order := range orders {
 		fmt.Println(formatOrder(order))
@@ -176,8 +260,45 @@ func formatOrder(order domain.Order) string {
 		order.Status,
 		order.Expiry.Format("2006-01-02"),
 		order.UpdatedAt.Format("2006-01-02 15:04:05"),
-		order.FinalPrice,
+		order.BasePrice+order.PackagePrice,
 		order.Weight,
 		order.Packaging,
 	)
+}
+
+func (h *CLIHandler) initHandlers() map[string]command {
+	return map[string]command{
+		"accept": {
+			Handler:     h.handleAccept,
+			Description: "Принять заказ: accept <ID> <RecipientID> <Expiry> <BasePrice> <Weight> <Packaging>",
+		},
+		"return": {
+			Handler:     h.handleReturn,
+			Description: "Вернуть заказ: return <ID>",
+		},
+		"issue/refund": {
+			Handler:     h.handleIssueRefund,
+			Description: "Выдать или вернуть заказы: issue/refund <UserID> <OrderID1> <OrderID2> ...",
+		},
+		"list": {
+			Handler:     h.handleList,
+			Description: "Список заказов пользователя: list <UserID> [n] [yes]",
+		},
+		"refunded": {
+			Handler:     h.handleRefunded,
+			Description: "Список возвращенных заказов: refunded [limit]",
+		},
+		"history": {
+			Handler:     h.handleHistory,
+			Description: "История заказов: history",
+		},
+		"json": {
+			Handler:     h.handleJSON,
+			Description: "Принять заказы из JSON-файла: json <filename>",
+		},
+		"help": {
+			Handler:     h.handleHelp,
+			Description: "Показать справку: help",
+		},
+	}
 }

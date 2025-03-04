@@ -9,7 +9,7 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/delivery"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
-	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/json_storage"
+	jsonstorage "gitlab.ozon.dev/sadsnake2311/homework/internal/storage/json_storage"
 )
 
 func main() {
@@ -17,13 +17,11 @@ func main() {
 
 	jsonStorage := jsonstorage.NewJSONOrderStorage(cfg.OrderStoragePath)
 
-	repo := repository.NewRepository(
-		jsonStorage,
-		jsonStorage,
-		jsonStorage,
-	)
+	orderRepo := repository.NewOrderRepository(jsonStorage)
+	userRepo := repository.NewUserOrderRepository(jsonStorage)
+	reportRepo := repository.NewReportRepository(jsonStorage)
 
-	service := service.NewStorageService(repo)
+	service := service.NewStorageService(orderRepo, userRepo, reportRepo)
 
 	cli := delivery.NewCLIHandler(service)
 

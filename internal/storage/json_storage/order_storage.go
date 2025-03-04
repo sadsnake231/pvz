@@ -1,9 +1,9 @@
 package jsonstorage
 
 import (
-	"sync"
 	"fmt"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"sync"
 )
 
 type JSONOrderStorage struct {
@@ -16,7 +16,6 @@ func NewJSONOrderStorage(filePath string) *JSONOrderStorage {
 }
 
 func (s *JSONOrderStorage) SaveOrder(order domain.Order) error {
-
 
 	orders, err := s.readAll()
 	if err != nil {
@@ -62,4 +61,3 @@ func (s *JSONOrderStorage) DeleteOrder(id string) (string, error) {
 
 	return id, nil
 }
-

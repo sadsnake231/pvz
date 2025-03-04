@@ -1,6 +1,5 @@
 package jsonstorage
 
-
 import (
 	"fmt"
 	"sort"
@@ -65,7 +64,6 @@ func (s *JSONOrderStorage) paginateOrders(orders []domain.Order, limit int, offs
 
 func (s *JSONOrderStorage) GetRefundedOrders(limit int, offset int) ([]domain.Order, error) {
 
-
 	orders, err := s.readAll()
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при чтении заказов: %v", err)
@@ -96,7 +94,6 @@ func (s *JSONOrderStorage) GetRefundedOrders(limit int, offset int) ([]domain.Or
 }
 
 func (s *JSONOrderStorage) GetOrderHistory() ([]domain.Order, error) {
-
 
 	orders, err := s.readAll()
 	if err != nil {

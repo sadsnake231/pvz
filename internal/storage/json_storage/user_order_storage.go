@@ -7,26 +7,22 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 )
 
-func (s *JSONOrderStorage) IssueOrders(userID string, orderIDs []string) (string, []string, error) {
-	orders, err := s.readAll()
-	if err != nil {
-		return "", nil, fmt.Errorf("ошибка при чтении заказов: %v", err)
-	}
-
-	issuedOrderIDs, returnErr := s.processOrdersForIssue(userID, orderIDs, orders)
-
-	if err := s.writeAll(orders); err != nil {
-		return "", nil, fmt.Errorf("ошибка при сохранении заказов: %v", err)
-	}
+func (s *JSONOrderStorage) IssueOrders(userID string, orderIDs []string) domain.ProcessedOrders {
+	issuedOrderIDs, returnErr := s.processOrdersForIssue(userID, orderIDs)
 
 	if len(issuedOrderIDs) == 0 && returnErr == nil {
 		returnErr = domain.ErrUserNoOrders
 	}
 
-	return userID, issuedOrderIDs, returnErr
+	return domain.ProcessedOrders{UserID: userID, OrderIDs: issuedOrderIDs, Error: returnErr}
 }
 
-func (s *JSONOrderStorage) processOrdersForIssue(userID string, orderIDs []string, orders []domain.Order) ([]string, error) {
+func (s *JSONOrderStorage) processOrdersForIssue(userID string, orderIDs []string) ([]string, error) {
+	orders, err := s.readAll()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при чтении заказов: %v", err)
+	}
+
 	issuedOrderIDs := make([]string, 0)
 	var returnErr error
 
@@ -44,6 +40,10 @@ func (s *JSONOrderStorage) processOrdersForIssue(userID string, orderIDs []strin
 		orders[index].Status = domain.StatusIssued
 		orders[index].UpdatedAt = time.Now()
 		issuedOrderIDs = append(issuedOrderIDs, orderID)
+	}
+
+	if err := s.writeAll(orders); err != nil {
+		return nil, fmt.Errorf("ошибка при сохранении заказов: %v", err)
 	}
 
 	return issuedOrderIDs, returnErr
@@ -65,26 +65,22 @@ func (s *JSONOrderStorage) validateOrderForIssue(userID string, order *domain.Or
 	return nil
 }
 
-func (s *JSONOrderStorage) RefundOrders(userID string, orderIDs []string) (string, []string, error) {
-	orders, err := s.readAll()
-	if err != nil {
-		return "", nil, fmt.Errorf("ошибка при чтении заказов: %v", err)
-	}
-
-	refundedOrderIDs, returnErr := s.processOrdersForRefund(userID, orderIDs, orders)
-
-	if err := s.writeAll(orders); err != nil {
-		return "", nil, fmt.Errorf("ошибка при сохранении заказов: %v", err)
-	}
+func (s *JSONOrderStorage) RefundOrders(userID string, orderIDs []string) domain.ProcessedOrders {
+	refundedOrderIDs, returnErr := s.processOrdersForRefund(userID, orderIDs)
 
 	if len(refundedOrderIDs) == 0 && returnErr == nil {
 		returnErr = domain.ErrUserNoOrders
 	}
 
-	return userID, refundedOrderIDs, returnErr
+	return domain.ProcessedOrders{UserID: userID, OrderIDs: refundedOrderIDs, Error: returnErr}
 }
 
-func (s *JSONOrderStorage) processOrdersForRefund(userID string, orderIDs []string, orders []domain.Order) ([]string, error) {
+func (s *JSONOrderStorage) processOrdersForRefund(userID string, orderIDs []string) ([]string, error) {
+	orders, err := s.readAll()
+	if err != nil {
+		return nil, fmt.Errorf("ошиька при чтении заказов: %v", err)
+	}
+
 	refundedOrderIDs := make([]string, 0)
 	var returnErr error
 
@@ -102,6 +98,10 @@ func (s *JSONOrderStorage) processOrdersForRefund(userID string, orderIDs []stri
 		orders[index].Status = domain.StatusRefunded
 		orders[index].UpdatedAt = time.Now()
 		refundedOrderIDs = append(refundedOrderIDs, orderID)
+	}
+
+	if err := s.writeAll(orders); err != nil {
+		return nil, fmt.Errorf("ошибка при сохранении заказов: %v", err)
 	}
 
 	return refundedOrderIDs, returnErr

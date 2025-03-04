@@ -6,6 +6,7 @@ import (
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 )
+
 func (s *JSONOrderStorage) readAll() ([]domain.Order, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
