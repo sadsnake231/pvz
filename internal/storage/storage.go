@@ -1,20 +1,30 @@
 package storage
 
-import "gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+import (
+	"context"
+	"time"
+
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+)
 
 type OrderStorage interface {
-	SaveOrder(order domain.Order) error
-	FindOrderByID(id string) (int, *domain.Order, error)
-	DeleteOrder(id string) (string, error)
+	SaveOrder(ctx context.Context, order domain.Order) error
+	FindOrderByID(ctx context.Context, id string) (*domain.Order, error)
+	DeleteOrder(ctx context.Context, id string) error
 }
 
 type UserOrderStorage interface {
-	IssueOrders(userID string, orderID []string) domain.ProcessedOrders
-	RefundOrders(userID string, orderID []string) domain.ProcessedOrders
+	IssueOrders(ctx context.Context, userID string, orderIDs []string) (domain.ProcessedOrders, error)
+	RefundOrders(ctx context.Context, userID string, orderIDs []string) (domain.ProcessedOrders, error)
 }
 
 type ReportOrderStorage interface {
-	GetUserOrders(userID string, limit int, status string, offset int) ([]domain.Order, error)
-	GetRefundedOrders(limit, offset int) ([]domain.Order, error)
-	GetOrderHistory() ([]domain.Order, error)
+	GetUserOrders(ctx context.Context, userID string, limit int, cursor *int, status string) ([]domain.Order, string, error)
+	GetRefundedOrders(ctx context.Context, limit int, offset *int) ([]domain.Order, string, error)
+	GetOrderHistory(ctx context.Context, limit int, lastUpdatedCursor time.Time, idCursor int) ([]domain.Order, string, error)
+}
+
+type AuthStorage interface {
+	CreateUser(ctx context.Context, user *domain.User) error
+	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 }

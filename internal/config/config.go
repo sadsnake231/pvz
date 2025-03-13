@@ -1,13 +1,15 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	OrderStoragePath string
+	DatabaseURL string
+	HTTPPort    string
 }
 
 func Load() *Config {
@@ -16,7 +18,8 @@ func Load() *Config {
 	}
 
 	return &Config{
-		OrderStoragePath: getEnv("ORDER_STORAGE_PATH", "./data/orders.json"),
+		DatabaseURL: getEnv("DATABASE_URL", ""),
+		HTTPPort:    getEnv("HTTP_PORT", ":9000"),
 	}
 }
 

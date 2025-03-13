@@ -1,5 +1,5 @@
 APP_NAME=myapp
-APP_PATH=cmd/cli/main.go
+APP_PATH=cmd/api/main.go
 GO_MOD_PATH=go.mod
 LINT_THRESHOLD=10
 GOBIN=$(CURDIR)/bin
@@ -11,6 +11,7 @@ default: build
 build:
 	@echo "Сборка приложения..."
 	go build -o bin/$(APP_NAME) $(APP_PATH)
+	goose -dir internal/db/migrations postgres "postgres://user:password@localhost:5432/orders?sslmode=disable" up
 	@echo "Сборка завершена. Исполняемый файл: bin/$(APP_NAME)"
 
 deps:
@@ -25,24 +26,6 @@ run:
 	fi
 	@echo "Запуск приложения..."
 	./bin/$(APP_NAME)
-
-lint:
-	@echo "Запуск линтеров..."
-	@mkdir -p $(GOBIN)
-	@if ! [ -x "$(GOBIN)/gocyclo" ]; then \
-		echo "Установка gocyclo..."; \
-		GOBIN=$(GOBIN) go install github.com/fzipp/gocyclo/cmd/gocyclo@latest; \
-	fi
-	@if ! [ -x "$(GOBIN)/gocognit" ]; then \
-		echo "Установка gocognit..."; \
-		GOBIN=$(GOBIN) go install github.com/uudashr/gocognit/cmd/gocognit@latest; \
-	fi
-	@echo "Запуск gocyclo..."
-	@$(GOBIN)/gocyclo -over $(LINT_THRESHOLD) .
-	@echo "Запуск gocognit..."
-	@$(GOBIN)/gocognit -over $(LINT_THRESHOLD) .
-	@echo "Проверка линтерами завершена."
-
 clean:
 	@echo "Очистка билдов..."
 	rm -rf bin/
@@ -53,6 +36,5 @@ help:
 	@echo "  make build    - Собрать приложение"
 	@echo "  make deps     - Установить/обновить зависимости"
 	@echo "  make run      - Запустить приложение (если оно собрано)"
-	@echo "  make lint     - Запустить линтеры (установятся в ./bin, если нет)"
 	@echo "  make clean    - Очистить билды"
 	@echo "  make help     - Показать эту справку"
