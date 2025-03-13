@@ -174,7 +174,6 @@ func (h *APIHandler) GetUserOrders(c *gin.Context) {
 }
 
 func (h *APIHandler) GetRefundedOrders(c *gin.Context) {
-	// Парсим лимит (по умолчанию 10)
 	limit := 10
 	if limitParam := c.Query("limit"); limitParam != "" {
 		var err error
@@ -185,10 +184,7 @@ func (h *APIHandler) GetRefundedOrders(c *gin.Context) {
 		}
 	}
 
-	// Парсим курсор (ID последнего заказа на предыдущей странице)
 	cursor := c.Query("cursor")
-
-	// Преобразуем курсор в int, если он не пустой
 	var cursorInt *int
 	if cursor != "" {
 		cursorVal, err := strconv.Atoi(cursor)
