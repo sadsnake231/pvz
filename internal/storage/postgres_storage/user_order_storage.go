@@ -146,7 +146,7 @@ func validateOrderForRefund(o *domain.Order, userID string, now time.Time) error
 	}
 
 	if o.Status() != domain.StatusIssued {
-		return domain.ErrNotStoredOrder
+		return domain.ErrNotIssuedOrder
 	}
 
 	if o.IssuedAt != nil && now.Sub(*o.IssuedAt) > 48*time.Hour {

@@ -9,36 +9,33 @@ import (
 
 func ParsePackaging(input string) (domain.PackagingStrategy, error) {
 	types := strings.Split(input, "+")
-	strategies := make([]domain.PackagingStrategy, 0, len(types))
-	typesConverted := make([]domain.PackagingType, len(types))
-
+	var strategies []domain.PackagingStrategy
 	var mainPackagingCount int
 
-	for i, t := range types {
+	for _, t := range types {
 		pt := domain.PackagingType(t)
-		typesConverted[i] = pt
 
+		var strategy domain.PackagingStrategy
 		switch pt {
-		case domain.PackagingTypePackage, domain.PackagingTypeBox:
-			mainPackagingCount++
-			if mainPackagingCount > 1 {
-				return nil, fmt.Errorf("нельзя комбинировать основные типы упаковки")
-			}
+		case domain.PackagingTypePackage:
+			strategy = domain.PackagingPackage{}
+		case domain.PackagingTypeBox:
+			strategy = domain.PackagingBox{}
 		case domain.PackagingTypeFilm:
+			strategy = domain.PackagingFilm{}
 		default:
 			return nil, fmt.Errorf("неизвестный тип упаковки")
 		}
-	}
 
-	for _, t := range typesConverted {
-		switch t {
-		case domain.PackagingTypePackage:
-			strategies = append(strategies, domain.PackagingPackage{})
-		case domain.PackagingTypeBox:
-			strategies = append(strategies, domain.PackagingBox{})
-		case domain.PackagingTypeFilm:
-			strategies = append(strategies, domain.PackagingFilm{})
+		if strategy.IsMain() {
+			mainPackagingCount++
 		}
+
+		if mainPackagingCount > 1 {
+			return nil, fmt.Errorf("нельзя комбинировать основные типы упаковки")
+		}
+
+		strategies = append(strategies, strategy)
 	}
 
 	if len(strategies) == 1 {

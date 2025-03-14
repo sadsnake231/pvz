@@ -41,6 +41,7 @@ var (
 
 	ErrNotFoundOrder       = errors.New("заказа с таким ID не существует")
 	ErrNotStoredOrder      = errors.New("заказа нет на складе")
+	ErrNotIssuedOrder      = errors.New("заказ ещё не был выдан")
 	ErrUserNoOrders        = errors.New("введенные заказы не готовы к выдаче или возврату")
 	ErrRefundPeriodExpired = errors.New("прошло 48 суток с момента выдачи заказа")
 

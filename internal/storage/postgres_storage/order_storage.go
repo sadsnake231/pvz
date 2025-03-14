@@ -47,7 +47,11 @@ func (s *OrderStorage) SaveOrder(ctx context.Context, order domain.Order) error 
 }
 
 func (s *OrderStorage) FindOrderByID(ctx context.Context, id string) (*domain.Order, error) {
-	query := `SELECT * FROM orders WHERE order_id = $1`
+	query := `SELECT 
+			order_id, recipient_id, expiry,
+			stored_at, issued_at, refunded_at,
+			base_price, weight, packaging
+		FROM orders WHERE order_id = $1`
 	row := s.db.QueryRow(ctx, query, id)
 	return scanOrder(row)
 }
