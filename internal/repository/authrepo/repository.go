@@ -1,4 +1,4 @@
-package repository
+package authrepo
 
 import (
 	"context"
@@ -12,10 +12,10 @@ import (
 
 type AuthRepository struct {
 	storage storage.AuthStorage
-	logger  *zap.Logger
+	logger  *zap.SugaredLogger
 }
 
-func NewAuthRepository(storage storage.AuthStorage, logger *zap.Logger) *AuthRepository {
+func NewAuthRepository(storage storage.AuthStorage, logger *zap.SugaredLogger) *AuthRepository {
 	return &AuthRepository{storage: storage, logger: logger}
 }
 

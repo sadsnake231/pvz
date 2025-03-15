@@ -1,4 +1,4 @@
-package postgres
+package authstorage
 
 import (
 	"context"

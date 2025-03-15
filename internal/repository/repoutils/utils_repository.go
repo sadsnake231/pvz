@@ -1,4 +1,4 @@
-package utils_repository
+package repoutils
 
 import (
 	"fmt"

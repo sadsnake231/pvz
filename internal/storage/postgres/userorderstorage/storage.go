@@ -1,4 +1,4 @@
-package postgres
+package userorderstorage
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/storageutils"
 )
 
 type UserOrderStorage struct {
@@ -114,7 +115,7 @@ func (s *UserOrderStorage) lockAndGetOrder(ctx context.Context, tx pgx.Tx, id st
 					 refunded_at, base_price, weight, packaging
 	 		FROM orders WHERE order_id = $1 FOR UPDATE`
 	row := tx.QueryRow(ctx, query, id)
-	order, err := scanOrder(row)
+	order, err := storageutils.ScanOrder(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFoundOrder

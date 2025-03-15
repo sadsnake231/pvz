@@ -1,4 +1,4 @@
-package repository
+package userorderrepo
 
 import (
 	"context"
@@ -16,10 +16,10 @@ type UserOrderRepository interface {
 
 type userOrderRepository struct {
 	userOrderStorage storage.UserOrderStorage
-	logger           *zap.Logger
+	logger           *zap.SugaredLogger
 }
 
-func NewUserOrderRepository(storage storage.UserOrderStorage, logger *zap.Logger) UserOrderRepository {
+func NewUserOrderRepository(storage storage.UserOrderStorage, logger *zap.SugaredLogger) UserOrderRepository {
 	return &userOrderRepository{userOrderStorage: storage, logger: logger}
 }
 

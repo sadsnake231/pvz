@@ -1,4 +1,4 @@
-package repository
+package orderrepo
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
-	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/utils_repository"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/repoutils"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage"
 	"go.uber.org/zap"
 )
@@ -19,10 +19,10 @@ type OrderRepository interface {
 
 type orderRepository struct {
 	orderStorage storage.OrderStorage
-	logger       *zap.Logger
+	logger       *zap.SugaredLogger
 }
 
-func NewOrderRepository(storage storage.OrderStorage, logger *zap.Logger) OrderRepository {
+func NewOrderRepository(storage storage.OrderStorage, logger *zap.SugaredLogger) OrderRepository {
 	return &orderRepository{
 		orderStorage: storage,
 		logger:       logger,
@@ -43,7 +43,7 @@ func (r *orderRepository) AcceptOrder(ctx context.Context, order domain.Order) e
 		return domain.ErrDuplicateOrder
 	}
 
-	packaging, err := utils_repository.ParsePackaging(string(order.Packaging))
+	packaging, err := repoutils.ParsePackaging(string(order.Packaging))
 	if err != nil {
 		return err
 	}

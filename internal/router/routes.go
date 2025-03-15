@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, logger *zap.Logger) *gin.Engine {
+func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, logger *zap.SugaredLogger) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware.LogRequestBody(logger))

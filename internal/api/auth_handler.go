@@ -12,20 +12,29 @@ import (
 
 type AuthHandler struct {
 	service service.AuthService
-	logger  *zap.Logger
+	logger  *zap.SugaredLogger
 }
 
-func NewAuthHandler(service service.AuthService, logger *zap.Logger) *AuthHandler {
+func NewAuthHandler(service service.AuthService, logger *zap.SugaredLogger) *AuthHandler {
 	return &AuthHandler{service: service, logger: logger}
 }
 
+type SignupUserRequest struct {
+	email    string `json:"email" binding:"required,email"`
+	password string `json:"password" binding:"required,min=8"`
+}
+
 func (h *AuthHandler) Signup(c *gin.Context) {
-	var user domain.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var req SignupUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrWrongJSON.Error()})
 		return
 	}
 
+	user := domain.User{
+		Email:    req.email,
+		Password: req.password,
+	}
 	err := h.service.Register(c.Request.Context(), &user)
 	if err != nil {
 		switch {

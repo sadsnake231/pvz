@@ -1,4 +1,4 @@
-package postgres
+package reportorderstorage
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/storageutils"
 )
 
 type ReportOrderStorage struct {
@@ -205,7 +206,7 @@ func (s *ReportOrderStorage) queryOrders(ctx context.Context, query string, args
 func scanOrders(rows pgx.Rows) ([]domain.Order, error) {
 	var orders []domain.Order
 	for rows.Next() {
-		o, err := scanOrder(rows)
+		o, err := storageutils.ScanOrder(rows)
 		if err != nil {
 			return nil, err
 		}

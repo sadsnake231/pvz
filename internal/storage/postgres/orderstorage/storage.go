@@ -1,13 +1,12 @@
-package postgres
+package orderstorage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/storageutils"
 )
 
 type OrderStorage struct {
@@ -53,7 +52,7 @@ func (s *OrderStorage) FindOrderByID(ctx context.Context, id string) (*domain.Or
 			base_price, weight, packaging
 		FROM orders WHERE order_id = $1`
 	row := s.db.QueryRow(ctx, query, id)
-	return scanOrder(row)
+	return storageutils.ScanOrder(row)
 }
 
 func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
@@ -64,28 +63,4 @@ func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
 	}
 
 	return nil
-}
-
-func scanOrder(row pgx.Row) (*domain.Order, error) {
-	var o domain.Order
-	err := row.Scan(
-		&o.ID,
-		&o.RecipientID,
-		&o.Expiry,
-		&o.StoredAt,
-		&o.IssuedAt,
-		&o.RefundedAt,
-		&o.BasePrice,
-		&o.Weight,
-		&o.Packaging,
-	)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, domain.ErrNotFoundOrder
-	}
-	if err != nil {
-		return nil, fmt.Errorf("не смог отсканить заказ: %w", err)
-	}
-
-	return &o, nil
 }

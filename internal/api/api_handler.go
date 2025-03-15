@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,10 +14,10 @@ import (
 )
 
 type APIHandler struct {
-	service service.StorageService
+	service service.OrderService
 }
 
-func NewAPIHandler(service service.StorageService) *APIHandler {
+func NewAPIHandler(service service.OrderService) *APIHandler {
 	return &APIHandler{service: service}
 }
 
@@ -29,10 +30,16 @@ type AcceptOrderRequest struct {
 	Packaging   domain.PackagingType `json:"packaging" binding:"required"`
 }
 
+type IssueRefundRequest struct {
+	Command  string   `json:"command" binding:"required"`
+	UserID   string   `json:"user_id" binding:"required"`
+	OrderIDs []string `json:"order_ids" binding:"required"`
+}
+
 func (h *APIHandler) AcceptOrder(c *gin.Context) {
 	var req AcceptOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrWrongJSON.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v: %v", domain.ErrWrongJSON, err)})
 		return
 	}
 
@@ -91,14 +98,10 @@ func (h *APIHandler) ReturnOrder(c *gin.Context) {
 }
 
 func (h *APIHandler) IssueRefundOrders(c *gin.Context) {
-	var req struct {
-		Command  string   `json:"command" binding:"required"`
-		UserID   string   `json:"user_id" binding:"required"`
-		OrderIDs []string `json:"order_ids" binding:"required"`
-	}
+	var req IssueRefundRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrWrongJSON.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v: %v", domain.ErrWrongJSON, err)})
 		return
 	}
 
@@ -117,8 +120,7 @@ func (h *APIHandler) IssueRefundOrders(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"processed_order_ids": result.ProcessedOrderIDs,
-			"error":               err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}

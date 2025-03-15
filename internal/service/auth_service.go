@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
-	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/authrepo"
 )
 
 type AuthService interface {
@@ -16,10 +16,10 @@ type AuthService interface {
 }
 
 type authService struct {
-	repo *repository.AuthRepository
+	repo *authrepo.AuthRepository
 }
 
-func NewAuthService(repo *repository.AuthRepository) AuthService {
+func NewAuthService(repo *authrepo.AuthRepository) AuthService {
 	return &authService{repo: repo}
 }
 

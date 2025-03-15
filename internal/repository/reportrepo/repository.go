@@ -1,4 +1,4 @@
-package repository
+package reportrepo
 
 import (
 	"context"
@@ -17,10 +17,10 @@ type ReportRepository interface {
 
 type reportRepository struct {
 	reportOrderStorage storage.ReportOrderStorage
-	logger             *zap.Logger
+	logger             *zap.SugaredLogger
 }
 
-func NewReportRepository(storage storage.ReportOrderStorage, logger *zap.Logger) ReportRepository {
+func NewReportRepository(storage storage.ReportOrderStorage, logger *zap.SugaredLogger) ReportRepository {
 	return &reportRepository{reportOrderStorage: storage, logger: logger}
 }
 

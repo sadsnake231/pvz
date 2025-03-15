@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func LogRequestBody(logger *zap.Logger) gin.HandlerFunc {
+func LogRequestBody(logger *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut || c.Request.Method == http.MethodDelete {
 			var buf bytes.Buffer

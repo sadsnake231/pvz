@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
-	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/orderrepo"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/reportrepo"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/userorderrepo"
 )
 
-type StorageService interface {
+type OrderService interface {
 	AcceptOrder(ctx context.Context, order domain.Order) error
 	ReturnOrder(ctx context.Context, orderID string) error
 	IssueOrders(ctx context.Context, userID string, orderIDs []string) (*IssueRefundResponse, error)
@@ -18,10 +20,10 @@ type StorageService interface {
 	GetOrderHistory(ctx context.Context, limit int, lastUpdatedCursor time.Time, idCursor int) ([]OrderResponse, string, error)
 }
 
-type storageService struct {
-	orderRepo     repository.OrderRepository
-	userOrderRepo repository.UserOrderRepository
-	reportRepo    repository.ReportRepository
+type orderService struct {
+	orderRepo     orderrepo.OrderRepository
+	userOrderRepo userorderrepo.UserOrderRepository
+	reportRepo    reportrepo.ReportRepository
 }
 
 type OrderResponse struct {
@@ -43,27 +45,27 @@ type IssueRefundResponse struct {
 	Error             string   `json:"error,omitempty"`
 }
 
-func NewStorageService(
-	orderRepo repository.OrderRepository,
-	userOrderRepo repository.UserOrderRepository,
-	reportRepo repository.ReportRepository,
-) StorageService {
-	return &storageService{
+func NewOrderService(
+	orderRepo orderrepo.OrderRepository,
+	userOrderRepo userorderrepo.UserOrderRepository,
+	reportRepo reportrepo.ReportRepository,
+) OrderService {
+	return &orderService{
 		orderRepo:     orderRepo,
 		userOrderRepo: userOrderRepo,
 		reportRepo:    reportRepo,
 	}
 }
 
-func (s *storageService) AcceptOrder(ctx context.Context, order domain.Order) error {
+func (s *orderService) AcceptOrder(ctx context.Context, order domain.Order) error {
 	return s.orderRepo.AcceptOrder(ctx, order)
 }
 
-func (s *storageService) ReturnOrder(ctx context.Context, orderID string) error {
+func (s *orderService) ReturnOrder(ctx context.Context, orderID string) error {
 	return s.orderRepo.ReturnOrder(ctx, orderID)
 }
 
-func (s *storageService) IssueOrders(ctx context.Context, userID string, orderIDs []string) (*IssueRefundResponse, error) {
+func (s *orderService) IssueOrders(ctx context.Context, userID string, orderIDs []string) (*IssueRefundResponse, error) {
 	result, err := s.userOrderRepo.IssueOrders(ctx, userID, orderIDs)
 	if err != nil {
 		return &IssueRefundResponse{}, err
@@ -76,7 +78,7 @@ func (s *storageService) IssueOrders(ctx context.Context, userID string, orderID
 	}, nil
 }
 
-func (s *storageService) RefundOrders(ctx context.Context, userID string, orderIDs []string) (*IssueRefundResponse, error) {
+func (s *orderService) RefundOrders(ctx context.Context, userID string, orderIDs []string) (*IssueRefundResponse, error) {
 	result, err := s.userOrderRepo.RefundOrders(ctx, userID, orderIDs)
 	if err != nil {
 		return &IssueRefundResponse{}, err
@@ -89,7 +91,7 @@ func (s *storageService) RefundOrders(ctx context.Context, userID string, orderI
 	}, nil
 }
 
-func (s *storageService) GetUserOrders(
+func (s *orderService) GetUserOrders(
 	ctx context.Context,
 	userID string,
 	limit int,
@@ -104,7 +106,7 @@ func (s *storageService) GetUserOrders(
 	return s.mapOrdersToResponses(orders), nextCursor, nil
 }
 
-func (s *storageService) GetRefundedOrders(
+func (s *orderService) GetRefundedOrders(
 	ctx context.Context,
 	limit int,
 	cursor *int,
@@ -116,7 +118,7 @@ func (s *storageService) GetRefundedOrders(
 	return s.mapOrdersToResponses(orders), nextCursor, nil
 }
 
-func (s *storageService) GetOrderHistory(
+func (s *orderService) GetOrderHistory(
 	ctx context.Context,
 	limit int,
 	lastUpdatedCursor time.Time,
@@ -130,7 +132,7 @@ func (s *storageService) GetOrderHistory(
 	return s.mapOrdersToResponses(orders), nextCursor, nil
 }
 
-func (s *storageService) mapOrderToResponse(order *domain.Order) *OrderResponse {
+func (s *orderService) mapOrderToResponse(order *domain.Order) *OrderResponse {
 	resp := &OrderResponse{
 		ID:          order.ID,
 		RecipientID: order.RecipientID,
@@ -154,7 +156,7 @@ func (s *storageService) mapOrderToResponse(order *domain.Order) *OrderResponse 
 	return resp
 }
 
-func (s *storageService) mapOrdersToResponses(orders []domain.Order) []OrderResponse {
+func (s *orderService) mapOrdersToResponses(orders []domain.Order) []OrderResponse {
 	responses := make([]OrderResponse, 0, len(orders))
 	for _, order := range orders {
 		responses = append(responses, *s.mapOrderToResponse(&order))

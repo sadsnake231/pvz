@@ -11,7 +11,7 @@ default: build
 build:
 	@echo "Сборка приложения..."
 	go build -o bin/$(APP_NAME) $(APP_PATH)
-	goose -dir internal/db/migrations postgres "postgres://user:password@localhost:5432/orders?sslmode=disable" up
+	goose -dir migrations postgres "postgres://user:password@localhost:5432/orders?sslmode=disable" up
 	@echo "Сборка завершена. Исполняемый файл: bin/$(APP_NAME)"
 
 deps:
@@ -20,12 +20,7 @@ deps:
 	@echo "Зависимости установлены."
 
 run:
-	@if [ ! -f bin/$(APP_NAME) ]; then \
-		echo "Ошибка: приложение не собрано. Сначала выполните 'make build'"; \
-		exit 1; \
-	fi
-	@echo "Запуск приложения..."
-	./bin/$(APP_NAME)
+	go run $(APP_PATH)
 clean:
 	@echo "Очистка билдов..."
 	rm -rf bin/
