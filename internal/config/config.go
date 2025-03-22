@@ -10,6 +10,7 @@ import (
 type Config struct {
 	DatabaseURL string
 	HTTPPort    string
+	AuditFilter string
 }
 
 func Load() *Config {
@@ -20,6 +21,7 @@ func Load() *Config {
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		HTTPPort:    getEnv("HTTP_PORT", ":9000"),
+		AuditFilter: getEnv("AUDIT_FILTER", ""),
 	}
 }
 

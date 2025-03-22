@@ -9,16 +9,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
 )
 
 type APIHandler struct {
-	service service.OrderService
+	service  service.OrderService
+	pipeline *audit.Pipeline
 }
 
-func NewAPIHandler(service service.OrderService) *APIHandler {
-	return &APIHandler{service: service}
+func NewAPIHandler(service service.OrderService, pipeline *audit.Pipeline) *APIHandler {
+	return &APIHandler{service: service, pipeline: pipeline}
 }
 
 type AcceptOrderRequest struct {
@@ -74,6 +76,14 @@ func (h *APIHandler) AcceptOrder(c *gin.Context) {
 		return
 	}
 
+	h.pipeline.DbPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+		"order_id": req.ID,
+		"status":   domain.StatusStored,
+	})
+	h.pipeline.StdoutPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+		"order_id": req.ID,
+		"status":   domain.StatusStored,
+	})
 	c.JSON(http.StatusCreated, gin.H{"message": "заказ принят"})
 }
 
@@ -94,6 +104,14 @@ func (h *APIHandler) ReturnOrder(c *gin.Context) {
 		return
 	}
 
+	h.pipeline.DbPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+		"order_id": orderID,
+		"status":   "Deleted",
+	})
+	h.pipeline.StdoutPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+		"order_id": orderID,
+		"status":   "Deleted",
+	})
 	c.JSON(http.StatusOK, gin.H{"message": "заказ удален"})
 }
 
@@ -108,11 +126,15 @@ func (h *APIHandler) IssueRefundOrders(c *gin.Context) {
 	var result *service.IssueRefundResponse
 	var err error
 
+	var status domain.OrderStatus
+
 	switch req.Command {
 	case "issue":
 		result, err = h.service.IssueOrders(c.Request.Context(), req.UserID, req.OrderIDs)
+		status = domain.StatusIssued
 	case "refund":
 		result, err = h.service.RefundOrders(c.Request.Context(), req.UserID, req.OrderIDs)
+		status = domain.StatusRefunded
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "неверная команда"})
 		return
@@ -125,11 +147,23 @@ func (h *APIHandler) IssueRefundOrders(c *gin.Context) {
 		return
 	}
 
+	for id := range result.ProcessedOrderIDs {
+		h.pipeline.DbPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+			"order_ids": id,
+			"status":    status,
+		})
+		h.pipeline.StdoutPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+			"order_id": id,
+			"status":   status,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"processed_order_ids": result.ProcessedOrderIDs,
 		"failed_order_ids":    result.FailedOrderIds,
 		"error":               result.Error,
 	})
+
 }
 
 func (h *APIHandler) GetUserOrders(c *gin.Context) {

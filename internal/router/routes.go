@@ -2,16 +2,18 @@ package router
 
 import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/api"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/middleware"
 	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, logger *zap.SugaredLogger) *gin.Engine {
+func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, auditHandler *api.AuditHandler, logger *zap.SugaredLogger, auditPipeline *audit.Pipeline) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware.LogRequestBody(logger))
+	router.Use(middleware.AuditMiddleware(auditPipeline))
 
 	orders := router.Group("/orders")
 	orders.Use(middleware.AuthMiddleware())
@@ -39,6 +41,11 @@ func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, logge
 	{
 		users.POST("/signup", authHandler.Signup)
 		users.POST("/login", authHandler.Login)
+	}
+
+	audit := router.Group("/logs")
+	{
+		audit.GET("", auditHandler.GetLogs)
 	}
 
 	return router

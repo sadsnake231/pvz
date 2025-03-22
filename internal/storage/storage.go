@@ -28,3 +28,8 @@ type AuthStorage interface {
 	CreateUser(ctx context.Context, user *domain.User) error
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
 }
+
+type AuditLogStorage interface {
+	SaveLog(ctx context.Context, log domain.Event) error
+	GetLogs(ctx context.Context, limit int, cursor *int) ([]domain.Event, int, error)
+}
