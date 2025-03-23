@@ -10,6 +10,7 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/config"
 	database "gitlab.ozon.dev/sadsnake2311/homework/internal/db"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/metrics"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/middleware"
 	auditrepo "gitlab.ozon.dev/sadsnake2311/homework/internal/repository/auditlogrepo"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/authrepo"
@@ -39,6 +40,9 @@ func main() {
 		logger.Fatal("Не удалось подключиться к базе данных", zap.Error(err))
 	}
 	defer db.Close()
+
+	metrics.RegisterMetrics()
+	metrics.StartMetricsServer()
 
 	orderStorage := orderstorage.NewOrderStorage(db)
 	userOrderStorage := userorder.NewUserOrderStorage(db)

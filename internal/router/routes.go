@@ -44,6 +44,7 @@ func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, audit
 	}
 
 	audit := router.Group("/logs")
+	audit.Use(middleware.AuthMiddleware())
 	{
 		audit.GET("", auditHandler.GetLogs)
 	}
