@@ -21,15 +21,28 @@ deps:
 
 run:
 	go run $(APP_PATH)
+
 clean:
 	@echo "Очистка билдов..."
 	rm -rf bin/
 	@echo "Очистка завершена."
 
+docker-up:
+	@echo "Запуск сервисов через docker-compose..."
+	docker-compose up -d
+	@echo "Docker-compose запущен."
+
+docker-down:
+	@echo "Остановка и удаление сервисов docker-compose..."
+	docker-compose down
+	@echo "Docker-compose остановлен."
+
 help:
 	@echo "Доступные команды:"
-	@echo "  make build    - Собрать приложение"
-	@echo "  make deps     - Установить/обновить зависимости"
-	@echo "  make run      - Запустить приложение (если оно собрано)"
-	@echo "  make clean    - Очистить билды"
-	@echo "  make help     - Показать эту справку"
+	@echo "  make build         - Собрать приложение"
+	@echo "  make deps          - Установить/обновить зависимости"
+	@echo "  make run           - Запустить приложение (если оно собрано)"
+	@echo "  make clean         - Очистить билды"
+	@echo "  make docker-up     - Поднять сервисы с помощью docker-compose"
+	@echo "  make docker-down   - Остановить и удалить сервисы docker-compose"
+	@echo "  make help          - Показать эту справку"

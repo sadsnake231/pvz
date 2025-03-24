@@ -30,5 +30,11 @@ func (r *auditRepository) SaveLog(ctx context.Context, event domain.Event) error
 }
 
 func (r *auditRepository) GetLogs(ctx context.Context, limit int, cursor *int) ([]domain.Event, int, error) {
-	return r.storage.GetLogs(ctx, limit, cursor)
+	logs, nextCursor, err := r.storage.GetLogs(ctx, limit, cursor)
+	if err != nil {
+		r.logger.Error("ошибка вывода аудит логов", zap.Error(err))
+		return logs, nextCursor, domain.ErrDatabase
+	}
+
+	return logs, nextCursor, nil
 }

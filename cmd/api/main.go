@@ -59,7 +59,7 @@ func main() {
 	auditService := service.NewAuditService(auditRepo)
 
 	filterFunc := audit.NewFilterFunc(cfg.AuditFilter)
-	auditPipeline := audit.NewPipeline(filterFunc, auditService)
+	auditPipeline := audit.NewPipeline(filterFunc, auditService, logger)
 
 	apiHandler := api.NewAPIHandler(orderService, auditPipeline)
 	authHandler := api.NewAuthHandler(authService, logger)

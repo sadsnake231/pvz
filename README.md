@@ -12,7 +12,11 @@ curl -X GET "http://localhost:9000/logs?limit=5&cursor=100" \
 
 # Prometheus, Grafana
 
-Сначала надо поднять docker-compose
+Сначала надо поднять docker-compose 
+
+```sh
+make docker-up
+```
 
 Вход в Grafana: http://localhost:3000, логин и пароль admin
 

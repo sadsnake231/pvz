@@ -2,10 +2,10 @@ package audit
 
 import (
 	"context"
-	"fmt"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
+	"go.uber.org/zap"
 )
 
 type FilterFunc func(domain.Event) bool
@@ -15,14 +15,16 @@ type Pipeline struct {
 	StdoutPool *WorkerPool
 	filterFunc FilterFunc
 	service    service.AuditService
+	logger     *zap.SugaredLogger
 }
 
-func NewPipeline(filterFunc FilterFunc, service service.AuditService) *Pipeline {
+func NewPipeline(filterFunc FilterFunc, service service.AuditService, logger *zap.SugaredLogger) *Pipeline {
 	return &Pipeline{
-		DbPool:     NewWorkerPool(),
-		StdoutPool: NewWorkerPool(),
+		DbPool:     NewWorkerPool(logger),
+		StdoutPool: NewWorkerPool(logger),
 		filterFunc: filterFunc,
 		service:    service,
+		logger:     logger,
 	}
 }
 
@@ -46,7 +48,10 @@ func (p *Pipeline) saveToDB(e domain.Event) error {
 
 func (p *Pipeline) printToStdout(e domain.Event) error {
 	if p.filterFunc(e) {
-		fmt.Printf("[AUDIT] %+v\n", e)
+		p.logger.Infow("[AUDIT]",
+			"event_type", e.Type,
+			"data", e.Data,
+		)
 	}
 	return nil
 }

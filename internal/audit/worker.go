@@ -2,23 +2,25 @@ package audit
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"go.uber.org/zap"
 )
 
 type Worker struct {
 	inputChan   <-chan domain.Event
 	processFunc func(domain.Event) error
 	workerType  string
+	logger      *zap.SugaredLogger
 }
 
-func NewWorker(input <-chan domain.Event, f func(domain.Event) error, workerType string) *Worker {
+func NewWorker(input <-chan domain.Event, f func(domain.Event) error, workerType string, logger *zap.SugaredLogger) *Worker {
 	return &Worker{
 		inputChan:   input,
 		processFunc: f,
 		workerType:  workerType,
+		logger:      logger,
 	}
 }
 
@@ -54,7 +56,10 @@ func (w *Worker) Run(ctx context.Context) {
 func (w *Worker) processBatch(events []domain.Event) {
 	for _, event := range events {
 		if err := w.processFunc(event); err != nil {
-			fmt.Printf("[%s] Ошибка обработки: %v\n", w.workerType, err)
+			w.logger.Errorw("Ошибка обработки события",
+				"worker_type", w.workerType,
+				"error", err,
+			)
 		}
 	}
 }
