@@ -21,10 +21,8 @@ func NewWorkerPool(logger *zap.SugaredLogger) *WorkerPool {
 	}
 }
 
-func (p *WorkerPool) StartWorkers(ctx context.Context, processStatusFunc, processAPIFunc func(domain.Event) error) {
-	// StatusWorker
-	go NewWorker(p.StatusChan, processStatusFunc, "status_worker", p.logger).Run(ctx)
+func (p *WorkerPool) StartWorkers(ctx context.Context, handler func(domain.Event) error) {
+	go NewWorker(p.ApiChan, handler, "api_worker", p.logger).Run(ctx)
 
-	// APIWorker
-	go NewWorker(p.ApiChan, processAPIFunc, "api_worker", p.logger).Run(ctx)
+	go NewWorker(p.StatusChan, handler, "status_worker", p.logger).Run(ctx)
 }

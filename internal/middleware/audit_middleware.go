@@ -16,11 +16,7 @@ func AuditMiddleware(p *audit.Pipeline) gin.HandlerFunc {
 
 		metrics.HTTPRequestCount.WithLabelValues(method, path).Inc()
 
-		p.DbPool.ApiChan <- domain.NewEvent(domain.EventAPIRequest, map[string]any{
-			"method": method,
-			"path":   path,
-		})
-		p.StdoutPool.ApiChan <- domain.NewEvent(domain.EventAPIRequest, map[string]any{
+		p.SendEvent(domain.EventAPIRequest, map[string]any{
 			"method": method,
 			"path":   path,
 		})
@@ -31,11 +27,7 @@ func AuditMiddleware(p *audit.Pipeline) gin.HandlerFunc {
 
 		metrics.HTTPResponseStatusCount.WithLabelValues(status, path).Inc()
 
-		p.DbPool.ApiChan <- domain.NewEvent(domain.EventAPIResponse, map[string]any{
-			"status": c.Writer.Status(),
-			"path":   c.Request.URL.Path,
-		})
-		p.StdoutPool.ApiChan <- domain.NewEvent(domain.EventAPIResponse, map[string]any{
+		p.SendEvent(domain.EventAPIResponse, map[string]any{
 			"status": c.Writer.Status(),
 			"path":   c.Request.URL.Path,
 		})

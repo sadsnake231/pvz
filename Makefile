@@ -3,8 +3,13 @@ APP_PATH=cmd/api/main.go
 GO_MOD_PATH=go.mod
 LINT_THRESHOLD=10
 GOBIN=$(CURDIR)/bin
+POSTGRES_URL = "postgres://test:test@localhost:5432/testdb?sslmode=disable"
 
 export GOBIN
+
+.PHONY: up down test-integration migrate clean-db
+
+
 
 default: build
 
@@ -27,22 +32,47 @@ clean:
 	rm -rf bin/
 	@echo "Очистка завершена."
 
-docker-up:
-	@echo "Запуск сервисов через docker-compose..."
-	docker-compose up -d
-	@echo "Docker-compose запущен."
+ docker-metrics-up:
+	@echo "Запуск сервисов метрик через docker-compose..."
+	docker-compose -f docker-compose-metrics.yml up -d
+	@echo "Docker-compose метрик запущен."
 
-docker-down:
-	@echo "Остановка и удаление сервисов docker-compose..."
-	docker-compose down
-	@echo "Docker-compose остановлен."
+docker-metrics-down:
+	@echo "Остановка и удаление сервисов метрик docker-compose..."
+	docker-compose -f docker-compose-metrics.yml down
+	@echo "Docker-compose метрик остановлен."
+
+docker-tests-up:
+	@echo "Запуск сервисов метрик через docker-compose..."
+	docker-compose -f docker-compose-tests.yml up -d
+	@echo "Docker-compose метрик запущен."
+
+docker-tests-down:
+	@echo "Остановка и удаление сервисов тестов docker-compose..."
+	docker-compose -f docker-compose-tests.yml down
+	@echo "Docker-compose тестов остановлен."
+
+test-integration:
+	go test -v -tags=integration ./tests/integration/...
+
+test-unit:
+	go test -v -tags=unit ./tests/unit/...
+
+migrate:
+	goose -dir ./migrations postgres $(POSTGRES_URL) up
+
 
 help:
 	@echo "Доступные команды:"
-	@echo "  make build         - Собрать приложение"
-	@echo "  make deps          - Установить/обновить зависимости"
-	@echo "  make run           - Запустить приложение (если оно собрано)"
-	@echo "  make clean         - Очистить билды"
-	@echo "  make docker-up     - Поднять сервисы с помощью docker-compose"
-	@echo "  make docker-down   - Остановить и удалить сервисы docker-compose"
-	@echo "  make help          - Показать эту справку"
+	@echo "  make build         		- Собрать приложение"
+	@echo "  make deps          		- Установить/обновить зависимости"
+	@echo "  make run           		- Запустить приложение (если оно собрано)"
+	@echo "  make clean         		- Очистить билды"
+	@echo "  make docker-metrics-up    	- Поднять сервисы метрик с помощью docker-compose"
+	@echo "  make docker-metrics-down  	- Остановить и удалить сервисы метрик docker-compose"
+	@echo "  make docker-tests-up   	- Поднять сервисы тестов docker-compose"
+	@echo "  make docker-tests-down   	- Остановить и удалить сервисы тестов docker-compose"
+	@echo "  make test-integration  	- Интеграционные тесты"
+	@echo "  make test-unit  			- Unit тесты"
+	@echo "  make help          		- Показать эту справку"
+	@echo "  make migrate				- Накатить миграции для тестовой БД"

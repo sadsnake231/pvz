@@ -28,7 +28,7 @@ func (s *AuditLogStorage) SaveLog(ctx context.Context, event domain.Event) error
 
 func (s *AuditLogStorage) GetLogs(ctx context.Context, limit int, cursor *int) ([]domain.Event, int, error) {
 	query := `
-		SELECT *
+		SELECT id, event_type, event_data, created_at
 		FROM audit_logs
 		WHERE ($1::INT IS NULL OR id < $1)
 		ORDER BY id DESC
@@ -45,20 +45,22 @@ func (s *AuditLogStorage) GetLogs(ctx context.Context, limit int, cursor *int) (
 	var events []domain.Event
 	for rows.Next() {
 		var event domain.Event
-		var eventData []byte
+		var eventDataBytes []byte
 		if err := rows.Scan(
 			&nextCursor,
 			&event.Type,
-			&eventData,
+			&eventDataBytes,
 			&event.Time,
 		); err != nil {
 			return nil, nextCursor, err
 		}
 
-		if err := json.Unmarshal(eventData, &event.Data); err != nil {
-			return nil, 0, err
+		var eventData any
+		if err := json.Unmarshal(eventDataBytes, &eventData); err != nil {
+			return nil, nextCursor, err
 		}
 
+		event.Data = eventData
 		events = append(events, event)
 	}
 	return events, nextCursor, nil

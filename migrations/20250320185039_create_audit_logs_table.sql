@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE audit_logs (
     id SERIAL PRIMARY KEY,
-    event_type VARCHAR(50) NOT NULL,    
+    event_type TEXT NOT NULL,    
     event_data JSONB NOT NULL,
     created_at TIMESTAMP
 );

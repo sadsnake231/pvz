@@ -35,13 +35,15 @@ func (w *Worker) Run(ctx context.Context) {
 			batch = append(batch, event)
 			if len(batch) >= 5 {
 				w.processBatch(batch)
-				batch = nil
+				batch = batch[:0]
+				ticker.Reset(500 * time.Millisecond)
 			}
 
 		case <-ticker.C:
 			if len(batch) > 0 {
 				w.processBatch(batch)
-				batch = nil
+				batch = batch[:0]
+				ticker.Reset(500 * time.Millisecond)
 			}
 
 		case <-ctx.Done():

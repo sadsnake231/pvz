@@ -76,11 +76,7 @@ func (h *APIHandler) AcceptOrder(c *gin.Context) {
 		return
 	}
 
-	h.pipeline.DbPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
-		"order_id": req.ID,
-		"status":   domain.StatusStored,
-	})
-	h.pipeline.StdoutPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+	h.pipeline.SendEvent(domain.EventStatusChange, map[string]any{
 		"order_id": req.ID,
 		"status":   domain.StatusStored,
 	})
@@ -104,11 +100,7 @@ func (h *APIHandler) ReturnOrder(c *gin.Context) {
 		return
 	}
 
-	h.pipeline.DbPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
-		"order_id": orderID,
-		"status":   "Deleted",
-	})
-	h.pipeline.StdoutPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+	h.pipeline.SendEvent(domain.EventStatusChange, map[string]any{
 		"order_id": orderID,
 		"status":   "Deleted",
 	})
@@ -147,12 +139,8 @@ func (h *APIHandler) IssueRefundOrders(c *gin.Context) {
 		return
 	}
 
-	for id := range result.ProcessedOrderIDs {
-		h.pipeline.DbPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
-			"order_ids": id,
-			"status":    status,
-		})
-		h.pipeline.StdoutPool.ApiChan <- domain.NewEvent(domain.EventStatusChange, map[string]any{
+	for _, id := range result.ProcessedOrderIDs {
+		h.pipeline.SendEvent(domain.EventStatusChange, map[string]any{
 			"order_id": id,
 			"status":   status,
 		})

@@ -2,6 +2,7 @@ package audit
 
 import (
 	"context"
+	"strings"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
@@ -11,49 +12,56 @@ import (
 type FilterFunc func(domain.Event) bool
 
 type Pipeline struct {
-	DbPool     *WorkerPool
-	StdoutPool *WorkerPool
-	filterFunc FilterFunc
-	service    service.AuditService
-	logger     *zap.SugaredLogger
+	pools   []*WorkerPool
+	service service.AuditService
+	logger  *zap.SugaredLogger
 }
 
-func NewPipeline(filterFunc FilterFunc, service service.AuditService, logger *zap.SugaredLogger) *Pipeline {
+func NewPipeline(service service.AuditService, logger *zap.SugaredLogger, pools ...*WorkerPool) *Pipeline {
 	return &Pipeline{
-		DbPool:     NewWorkerPool(logger),
-		StdoutPool: NewWorkerPool(logger),
-		filterFunc: filterFunc,
-		service:    service,
-		logger:     logger,
+		pools:   pools,
+		service: service,
+		logger:  logger,
 	}
 }
+func (p *Pipeline) StartWorkers(ctx context.Context, filterFunc FilterFunc) error {
+	p.pools[0].StartWorkers(ctx, p.saveToDB(ctx))
 
-func (p *Pipeline) StartWorkers(ctx context.Context) {
-	p.DbPool.StartWorkers(ctx,
-		func(e domain.Event) error { return p.saveToDB(e) }, // Для статусов
-		func(e domain.Event) error { return p.saveToDB(e) }, // Для API
-	)
+	p.pools[1].StartWorkers(ctx, p.printToStdout(filterFunc))
 
-	p.StdoutPool.StartWorkers(ctx,
-		func(e domain.Event) error { return p.printToStdout(e) }, // Для статусов
-		func(e domain.Event) error { return p.printToStdout(e) }, // Для API
-	)
-}
-
-func (p *Pipeline) saveToDB(e domain.Event) error {
-	err := p.service.SaveLog(context.Background(), e)
-	//fmt.Printf("[DB] Saving event: %+v\n", e)
-	return err
-}
-
-func (p *Pipeline) printToStdout(e domain.Event) error {
-	if p.filterFunc(e) {
-		p.logger.Infow("[AUDIT]",
-			"event_type", e.Type,
-			"data", e.Data,
-		)
-	}
 	return nil
+}
+
+func (p *Pipeline) saveToDB(ctx context.Context) func(domain.Event) error {
+	return func(e domain.Event) error {
+		err := p.service.SaveLog(ctx, e)
+		return err
+	}
+}
+
+func (p *Pipeline) printToStdout(filterFunc FilterFunc) func(domain.Event) error {
+	return func(e domain.Event) error {
+		if filterFunc(e) {
+			p.logger.Infow("[AUDIT]",
+				"event_type", e.Type,
+				"data", e.Data,
+			)
+		}
+		return nil
+	}
+}
+
+func (p *Pipeline) SendEvent(eventType domain.EventType, data any) {
+	event := domain.NewEvent(eventType, data)
+
+	for _, pool := range p.pools {
+		switch eventType {
+		case domain.EventAPIRequest, domain.EventAPIResponse:
+			go func(pool *WorkerPool) { pool.ApiChan <- event }(pool)
+		case domain.EventStatusChange:
+			go func(pool *WorkerPool) { pool.StatusChan <- event }(pool)
+		}
+	}
 }
 
 func NewFilterFunc(filterKeyword string) FilterFunc {
@@ -63,8 +71,13 @@ func NewFilterFunc(filterKeyword string) FilterFunc {
 		}
 
 		if data, ok := e.Data.(map[string]any); ok {
-			for _, value := range data {
-				if str, ok := value.(string); ok && str == filterKeyword {
+			for key, value := range data {
+				if str, ok := value.(string); ok {
+					if strings.Contains(str, filterKeyword) {
+						return true
+					}
+				}
+				if strings.Contains(key, filterKeyword) {
 					return true
 				}
 			}
