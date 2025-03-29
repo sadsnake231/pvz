@@ -8,6 +8,7 @@ import (
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/api"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/cache"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/config"
 	database "gitlab.ozon.dev/sadsnake2311/homework/internal/db"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/metrics"
@@ -43,6 +44,9 @@ func main() {
 	}
 	defer db.Close()
 
+	redisClient := cache.GetRedisClient("localhost:6379", "")
+	cache := cache.NewRedisCache(redisClient)
+
 	metrics.RegisterMetrics()
 	metrics.StartMetricsServer()
 
@@ -59,7 +63,7 @@ func main() {
 	authRepo := authrepo.NewAuthRepository(authStorage, logger)
 	auditRepo := auditrepo.NewAuditRepository(auditStorage, logger)
 
-	orderService := service.NewOrderService(orderRepo, userRepo, reportRepo)
+	orderService := service.NewOrderService(orderRepo, userRepo, reportRepo, cache, logger)
 	authService := service.NewAuthService(authRepo)
 	auditService := service.NewAuditService(auditRepo)
 
@@ -76,6 +80,9 @@ func main() {
 	defer stop()
 
 	auditPipeline.StartWorkers(ctx, filterFunc)
+
+	orderService.InitCache(ctx)
+	go orderService.CacheRefresh(ctx)
 
 	router := router.SetupRouter(apiHandler, authHandler, auditHandler, logger, auditPipeline)
 	router.Use(middleware.AuditMiddleware(auditPipeline))

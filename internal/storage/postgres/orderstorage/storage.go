@@ -2,8 +2,8 @@ package orderstorage
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/storageutils"
@@ -18,19 +18,24 @@ func NewOrderStorage(db *pgxpool.Pool) *OrderStorage {
 }
 
 func (s *OrderStorage) SaveOrder(ctx context.Context, order domain.Order) error {
-	savePackagingQuery := `INSERT INTO packaging_types (id, packaging_price) VALUES ($1, $2)
-	                       ON CONFLICT (id) DO NOTHING`
-	_, err := s.db.Exec(ctx, savePackagingQuery, string(order.Packaging), order.PackagePrice)
+	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to save packaging: %w", err)
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	savePackagingQuery := `INSERT INTO packaging_types (id, packaging_price) VALUES ($1, $2)
+                          ON CONFLICT (id) DO NOTHING`
+	if _, err := tx.Exec(ctx, savePackagingQuery, string(order.Packaging), order.PackagePrice); err != nil {
+		return err
 	}
 
 	saveOrderQuery := `INSERT INTO orders (
-		order_id, recipient_id, expiry, stored_at, issued_at, refunded_at,
-		base_price, weight, packaging
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+        order_id, recipient_id, expiry, stored_at, issued_at, refunded_at,
+        base_price, weight, packaging
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
-	_, err = s.db.Exec(ctx, saveOrderQuery,
+	if _, err := tx.Exec(ctx, saveOrderQuery,
 		order.ID,
 		order.RecipientID,
 		order.Expiry,
@@ -40,9 +45,26 @@ func (s *OrderStorage) SaveOrder(ctx context.Context, order domain.Order) error 
 		order.BasePrice,
 		order.Weight,
 		order.Packaging,
-	)
+	); err != nil {
+		return err
+	}
 
-	return err
+	return tx.Commit(ctx)
+}
+
+func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
+	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	query := `DELETE FROM orders WHERE order_id = $1`
+	if _, err := tx.Exec(ctx, query, id); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *OrderStorage) FindOrderByID(ctx context.Context, id string) (*domain.Order, error) {
@@ -53,14 +75,4 @@ func (s *OrderStorage) FindOrderByID(ctx context.Context, id string) (*domain.Or
 		FROM orders WHERE order_id = $1`
 	row := s.db.QueryRow(ctx, query, id)
 	return storageutils.ScanOrder(row)
-}
-
-func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
-	query := `DELETE FROM orders WHERE order_id = $1`
-	_, err := s.db.Exec(ctx, query, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

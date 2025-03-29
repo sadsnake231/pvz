@@ -193,6 +193,101 @@ func (s *ReportOrderStorage) GetOrderHistory(
 	return orders, nextCursor, nil
 }
 
+func (s *ReportOrderStorage) GetHistoryOrderIDs(ctx context.Context) ([]string, error) {
+	query := `SELECT order_id FROM orders`
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orderIDs []string
+	for rows.Next() {
+		var orderID string
+		if err := rows.Scan(&orderID); err != nil {
+			return nil, err
+		}
+		orderIDs = append(orderIDs, orderID)
+	}
+	return orderIDs, nil
+}
+
+func (s *ReportOrderStorage) GetAllActiveOrderIDs(ctx context.Context) ([]string, error) {
+	query := `
+	SELECT order_id FROM orders 
+	WHERE 
+		(stored_at IS NOT NULL AND issued_at IS NULL AND refunded_at IS NULL AND expiry > NOW())
+		OR 
+		(issued_at IS NOT NULL AND refunded_at IS NULL AND issued_at >= NOW() - INTERVAL '48 hours')
+	`
+
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orderIDs []string
+	for rows.Next() {
+		var orderID string
+		if err := rows.Scan(&orderID); err != nil {
+			return nil, err
+		}
+		orderIDs = append(orderIDs, orderID)
+	}
+	return orderIDs, nil
+}
+
+func (s *ReportOrderStorage) GetUserActiveOrderIDs(ctx context.Context, userID string) ([]string, error) {
+	query := `
+	SELECT order_id FROM orders 
+	WHERE recipient_id = $1 AND (
+		(stored_at IS NOT NULL AND issued_at IS NULL AND refunded_at IS NULL AND expiry > NOW())
+		OR 
+		(issued_at IS NOT NULL AND refunded_at IS NULL AND issued_at >= NOW() - INTERVAL '48 hours')
+	)
+	`
+
+	rows, err := s.db.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orderIDs []string
+	for rows.Next() {
+		var orderID string
+		if err := rows.Scan(&orderID); err != nil {
+			return nil, err
+		}
+		orderIDs = append(orderIDs, orderID)
+	}
+	return orderIDs, nil
+}
+
+func (s *ReportOrderStorage) GetAllOrders(ctx context.Context) ([]domain.Order, error) {
+	query := `
+	SELECT 
+	order_id, recipient_id, expiry, 
+    stored_at, issued_at, refunded_at, 
+    base_price, weight, packaging
+	FROM orders
+	`
+
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders, err := scanOrders(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, err
+}
+
 func (s *ReportOrderStorage) queryOrders(ctx context.Context, query string, args ...any) ([]domain.Order, error) {
 	rows, err := s.db.Query(ctx, query, args...)
 	if err != nil {

@@ -281,3 +281,41 @@ func (h *APIHandler) GetOrderHistory(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response)
 }
+
+func (h *APIHandler) GetUserActiveOrders(c *gin.Context) {
+	userID := c.Param("user_id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "требуется указать user id"})
+		return
+	}
+
+	orders, err := h.service.GetUserActiveOrders(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"orders": orders})
+}
+
+func (h *APIHandler) GetAllActiveOrders(c *gin.Context) {
+
+	orders, err := h.service.GetAllActiveOrders(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"orders": orders})
+}
+
+func (h *APIHandler) GetOrderHistoryV2(c *gin.Context) {
+
+	orders, err := h.service.GetOrderHistoryV2(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"orders": orders})
+}

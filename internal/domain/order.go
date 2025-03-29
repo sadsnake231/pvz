@@ -43,12 +43,14 @@ var (
 	ErrNotStoredOrder      = errors.New("заказа нет на складе")
 	ErrNotIssuedOrder      = errors.New("заказ ещё не был выдан")
 	ErrUserNoOrders        = errors.New("введенные заказы не готовы к выдаче или возврату")
+	ErrUserNoActiveOrders  = errors.New("у пользователя нет активных заказов")
 	ErrRefundPeriodExpired = errors.New("прошло 48 суток с момента выдачи заказа")
 
 	ErrInvalidWeight = errors.New("слишком большой вес для этой упаковки")
 
 	ErrWrongJSON = errors.New("тело запроса содержит ошибки")
 	ErrDatabase  = errors.New("ошибка базы данных")
+	ErrCache     = errors.New("ошибка кэша")
 )
 
 type ErrUserDoesntOwnOrder struct {

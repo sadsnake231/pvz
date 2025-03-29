@@ -13,6 +13,10 @@ type ReportRepository interface {
 	GetUserOrders(ctx context.Context, userID string, limit int, cursor *int, status string) ([]domain.Order, string, error)
 	GetRefundedOrders(ctx context.Context, limit int, cursor *int) ([]domain.Order, string, error)
 	GetOrderHistory(ctx context.Context, limit int, lastUpdatedCursor time.Time, idCursor int) ([]domain.Order, string, error)
+	GetHistoryOrderIDs(ctx context.Context) ([]string, error)
+	GetAllActiveOrderIDs(ctx context.Context) ([]string, error)
+	GetUserActiveOrderIDs(ctx context.Context, userID string) ([]string, error)
+	GetAllOrders(ctx context.Context) ([]domain.Order, error)
 }
 
 type reportRepository struct {
@@ -66,4 +70,44 @@ func (r *reportRepository) GetOrderHistory(
 	}
 
 	return res, newCursor, err
+}
+
+func (r *reportRepository) GetHistoryOrderIDs(ctx context.Context) ([]string, error) {
+	orderIDs, err := r.reportOrderStorage.GetHistoryOrderIDs(ctx)
+	if err != nil {
+		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		return orderIDs, domain.ErrDatabase
+	}
+
+	return orderIDs, err
+}
+
+func (r *reportRepository) GetAllActiveOrderIDs(ctx context.Context) ([]string, error) {
+	orderIDs, err := r.reportOrderStorage.GetAllActiveOrderIDs(ctx)
+	if err != nil {
+		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		return orderIDs, domain.ErrDatabase
+	}
+
+	return orderIDs, err
+}
+
+func (r *reportRepository) GetUserActiveOrderIDs(ctx context.Context, userID string) ([]string, error) {
+	orderIDs, err := r.reportOrderStorage.GetUserActiveOrderIDs(ctx, userID)
+	if err != nil {
+		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		return orderIDs, domain.ErrDatabase
+	}
+
+	return orderIDs, err
+}
+
+func (r *reportRepository) GetAllOrders(ctx context.Context) ([]domain.Order, error) {
+	orders, err := r.reportOrderStorage.GetAllOrders(ctx)
+	if err != nil {
+		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		return orders, domain.ErrDatabase
+	}
+
+	return orders, err
 }

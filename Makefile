@@ -32,14 +32,14 @@ clean:
 	rm -rf bin/
 	@echo "Очистка завершена."
 
- docker-metrics-up:
+ docker-services-up:
 	@echo "Запуск сервисов метрик через docker-compose..."
-	docker-compose -f docker-compose-metrics.yml up -d
+	docker-compose -f docker-compose-services.yml up -d
 	@echo "Docker-compose метрик запущен."
 
-docker-metrics-down:
+docker-services-down:
 	@echo "Остановка и удаление сервисов метрик docker-compose..."
-	docker-compose -f docker-compose-metrics.yml down
+	docker-compose -f docker-compose-services.yml down
 	@echo "Docker-compose метрик остановлен."
 
 docker-tests-up:
@@ -68,8 +68,8 @@ help:
 	@echo "  make deps          		- Установить/обновить зависимости"
 	@echo "  make run           		- Запустить приложение (если оно собрано)"
 	@echo "  make clean         		- Очистить билды"
-	@echo "  make docker-metrics-up    	- Поднять сервисы метрик с помощью docker-compose"
-	@echo "  make docker-metrics-down  	- Остановить и удалить сервисы метрик docker-compose"
+	@echo "  make docker-services-up    - Поднять сервисы с помощью docker-compose"
+	@echo "  make docker-services-down  - Остановить и удалить сервисы docker-compose"
 	@echo "  make docker-tests-up   	- Поднять сервисы тестов docker-compose"
 	@echo "  make docker-tests-down   	- Остановить и удалить сервисы тестов docker-compose"
 	@echo "  make test-integration  	- Интеграционные тесты"

@@ -34,7 +34,9 @@ func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, audit
 		reports.GET("/:user_id/orders", apiHandler.GetUserOrders)
 		reports.GET("/refunded", apiHandler.GetRefundedOrders)
 		reports.GET("/history", apiHandler.GetOrderHistory)
-
+		reports.GET("/:user_id/orders/active", apiHandler.GetUserActiveOrders)
+		reports.GET("/active", apiHandler.GetAllActiveOrders)
+		reports.GET("/history/v2", apiHandler.GetOrderHistoryV2)
 	}
 
 	users := router.Group("/users")
