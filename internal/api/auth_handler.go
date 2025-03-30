@@ -20,8 +20,8 @@ func NewAuthHandler(service service.AuthService, logger *zap.SugaredLogger) *Aut
 }
 
 type SignupUserRequest struct {
-	email    string `json:"email" binding:"required,email"`
-	password string `json:"password" binding:"required,min=8"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 
 func (h *AuthHandler) Signup(c *gin.Context) {
@@ -32,8 +32,8 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 	}
 
 	user := domain.User{
-		Email:    req.email,
-		Password: req.password,
+		Email:    req.Email,
+		Password: req.Password,
 	}
 	err := h.service.Register(c.Request.Context(), &user)
 	if err != nil {

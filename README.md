@@ -111,12 +111,32 @@ deactivate Service
 @enduml
 
 ```
+# Принцип инвалидации кэша
 
+Инвалидация по событию + периодическое обновление + TTL в зависимости от статуса заказа
 
+# Новые curl, работающие с кэшем
 
+Активные заказы пользователя
 
+```sh
+curl -X get "http://localhost:9000/user0/orders/active" \
+     -b cookies.txt
+```
 
+Все активные заказы
 
+```sh
+curl -X get "http://localhost:9000/active" \
+     -b cookies.txt
+```
+
+История заказов
+
+```sh
+curl -X get "http://localhost:9000/history/v2" \
+     -b cookies.txt
+```
 
 
 # Получение логов через пагинацию с курсором по адресу

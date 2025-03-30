@@ -58,6 +58,9 @@ test-integration:
 test-unit:
 	go test -v -tags=unit ./tests/unit/...
 
+test-load:
+	go test -v -timeout 10m -run TestLoad ./tests/load
+
 migrate:
 	goose -dir ./migrations postgres $(POSTGRES_URL) up
 
@@ -74,5 +77,6 @@ help:
 	@echo "  make docker-tests-down   	- Остановить и удалить сервисы тестов docker-compose"
 	@echo "  make test-integration  	- Интеграционные тесты"
 	@echo "  make test-unit  			- Unit тесты"
+	@echo "  make test-load             - Нагрузочный тест"
 	@echo "  make help          		- Показать эту справку"
 	@echo "  make migrate				- Накатить миграции для тестовой БД"

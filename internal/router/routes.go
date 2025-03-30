@@ -14,6 +14,7 @@ func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, audit
 
 	router.Use(middleware.LogRequestBody(logger))
 	router.Use(middleware.AuditMiddleware(auditPipeline))
+	router.Use(middleware.MetricsMiddleware())
 
 	orders := router.Group("/orders")
 	orders.Use(middleware.AuthMiddleware())

@@ -1,0 +1,10 @@
+Requests      [total, rate, throughput]         3000, 50.02, 31.03
+Duration      [total, attack, wait]             1m9s, 59.981s, 9.282s
+Latencies     [min, mean, 50, 90, 95, 99, max]  748.545µs, 3.61s, 715.828ms, 10.001s, 10.001s, 10.003s, 10.011s
+Bytes In      [total, mean]                     602011821, 200670.61
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           71.63%
+Status Codes  [code:count]                      0:851  200:2149  
+Error Set:
+context deadline exceeded (Client.Timeout or context cancellation while reading body)
+Get "http://localhost:9000/reports/history/v2": context deadline exceeded (Client.Timeout exceeded while awaiting headers)

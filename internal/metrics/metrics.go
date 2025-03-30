@@ -64,6 +64,15 @@ var (
 		},
 		[]string{"status"},
 	)
+
+	APIResponseTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "api_response_time_seconds",
+			Help:    "API response time distribution",
+			Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1, 5},
+		},
+		[]string{"endpoint", "method", "status"},
+	)
 )
 
 func RegisterMetrics() {
