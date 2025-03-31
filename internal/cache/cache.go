@@ -7,6 +7,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/repository/reportrepo"
 )
 
 const (
@@ -17,11 +18,12 @@ const (
 )
 
 type RedisCache struct {
-	client *redis.Client
+	client     *redis.Client
+	reportRepo reportrepo.ReportRepository
 }
 
-func NewRedisCache(client *redis.Client) *RedisCache {
-	return &RedisCache{client: client}
+func NewRedisCache(client *redis.Client, reportRepo reportrepo.ReportRepository) *RedisCache {
+	return &RedisCache{client: client, reportRepo: reportRepo}
 }
 
 func (c *RedisCache) SetOrder(ctx context.Context, order domain.Order) error {
@@ -30,21 +32,17 @@ func (c *RedisCache) SetOrder(ctx context.Context, order domain.Order) error {
 	if err != nil {
 		return err
 	}
-
-	ttl := calculateOrderTTL(order)
-	return c.client.Set(ctx, key, data, ttl).Err()
+	return c.client.Set(ctx, key, data, calculateOrderTTL(order)).Err()
 }
 
 func (c *RedisCache) GetOrder(ctx context.Context, orderID string) (*domain.Order, error) {
-	key := orderKeyPrefix + orderID
-	data, err := c.client.Get(ctx, key).Bytes()
+	data, err := c.client.Get(ctx, orderKeyPrefix+orderID).Bytes()
 	if err == redis.Nil {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, domain.ErrCache
+		return nil, err
 	}
-
 	var order domain.Order
 	if err := json.Unmarshal(data, &order); err != nil {
 		return nil, err
@@ -52,18 +50,48 @@ func (c *RedisCache) GetOrder(ctx context.Context, orderID string) (*domain.Orde
 	return &order, nil
 }
 
+func (c *RedisCache) GetOrdersBatch(ctx context.Context, orderIDs []string) (map[string]*domain.Order, error) {
+	pipe := c.client.Pipeline()
+	cmds := make(map[string]*redis.StringCmd, len(orderIDs))
+	for _, id := range orderIDs {
+		cmds[id] = pipe.Get(ctx, orderKeyPrefix+id)
+	}
+	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
+		return nil, err
+	}
+	result := make(map[string]*domain.Order)
+	for id, cmd := range cmds {
+		data, err := cmd.Bytes()
+		if err != nil {
+			continue
+		}
+		var order domain.Order
+		if err := json.Unmarshal(data, &order); err != nil {
+			continue
+		}
+		result[id] = &order
+	}
+	return result, nil
+}
+
 func (c *RedisCache) DeleteOrder(ctx context.Context, orderID string) error {
 	return c.client.Del(ctx, orderKeyPrefix+orderID).Err()
 }
 
 func (c *RedisCache) GetUserActiveOrders(ctx context.Context, userID string) ([]string, error) {
-	key := userActiveKeyPrefix + userID
-	return c.getIndex(ctx, key)
+	return c.client.SMembers(ctx, userActiveKeyPrefix+userID).Result()
 }
 
-func (c *RedisCache) UpdateUserIndex(ctx context.Context, userID string, orderIDs []string) error {
+func (c *RedisCache) UpdateUserActiveOrders(ctx context.Context, userID string, orderIDs []string) error {
+	pipe := c.client.Pipeline()
 	key := userActiveKeyPrefix + userID
-	return c.setIndex(ctx, key, orderIDs, 24*time.Hour)
+	pipe.Del(ctx, key)
+	if len(orderIDs) > 0 {
+		pipe.SAdd(ctx, key, orderIDs)
+		pipe.Expire(ctx, key, 14*24*time.Hour)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
 }
 
 func (c *RedisCache) DeleteUserIndex(ctx context.Context, userID string) error {
@@ -71,86 +99,52 @@ func (c *RedisCache) DeleteUserIndex(ctx context.Context, userID string) error {
 }
 
 func (c *RedisCache) GetAllActiveOrderIDs(ctx context.Context) ([]string, error) {
-	return c.getIndex(ctx, allActiveKey)
+	return c.client.SMembers(ctx, allActiveKey).Result()
 }
 
-func (c *RedisCache) UpdateAllActiveIndex(ctx context.Context, orderIDs []string) error {
-	return c.setIndex(ctx, allActiveKey, orderIDs, 24*time.Hour)
+func (c *RedisCache) UpdateAllActiveOrders(ctx context.Context, orderIDs []string) error {
+	pipe := c.client.Pipeline()
+	pipe.Del(ctx, allActiveKey)
+	if len(orderIDs) > 0 {
+		pipe.SAdd(ctx, allActiveKey, orderIDs)
+		pipe.Expire(ctx, allActiveKey, 14*24*time.Hour)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
 }
 
 func (c *RedisCache) GetHistoryOrderIDs(ctx context.Context) ([]string, error) {
-	return c.getIndex(ctx, historyKey)
+	return c.client.SMembers(ctx, historyKey).Result()
 }
 
-func (c *RedisCache) UpdateHistoryIndex(ctx context.Context, orderIDs []string) error {
-	return c.setIndex(ctx, historyKey, orderIDs, 0)
+func (c *RedisCache) AddToHistory(ctx context.Context, orderID string) error {
+	return c.client.SAdd(ctx, historyKey, orderID).Err()
 }
 
-func (c *RedisCache) DeleteFromHistory(ctx context.Context, orderID string) error {
-	ids, err := c.getIndex(ctx, historyKey)
+func (c *RedisCache) RemoveFromHistory(ctx context.Context, orderID string) error {
+	return c.client.SRem(ctx, historyKey, orderID).Err()
+}
+
+func (c *RedisCache) RefreshActiveOrders(ctx context.Context) error {
+	orderIDs, err := c.reportRepo.GetAllActiveOrderIDs(ctx)
 	if err != nil {
 		return err
 	}
-
-	updatedIDs := removeFromSlice(ids, orderID)
-	return c.setIndex(ctx, historyKey, updatedIDs, 0)
+	return c.UpdateAllActiveOrders(ctx, orderIDs)
 }
 
-func removeFromSlice(slice []string, target string) []string {
-	var result []string
-	for _, v := range slice {
-		if v != target {
-			result = append(result, v)
-		}
-	}
-	return result
-}
-
-func (c *RedisCache) Ping(ctx context.Context) error {
-	return c.client.Ping(ctx).Err()
-}
-
-func (c *RedisCache) getOrdersByIndex(ctx context.Context, indexKey string) ([]domain.Order, error) {
-	ids, err := c.getIndex(ctx, indexKey)
-	if err != nil {
-		return nil, err
-	}
-
-	var orders []domain.Order
-	for _, id := range ids {
-		order, err := c.GetOrder(ctx, id)
-		if err != nil {
-			continue
-		}
-		if order != nil {
-			orders = append(orders, *order)
-		}
-	}
-	return orders, nil
-}
-
-func (c *RedisCache) getIndex(ctx context.Context, key string) ([]string, error) {
-	data, err := c.client.Get(ctx, key).Bytes()
-	if err == redis.Nil {
-		return []string{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	var ids []string
-	if err := json.Unmarshal(data, &ids); err != nil {
-		return nil, err
-	}
-	return ids, nil
-}
-
-func (c *RedisCache) setIndex(ctx context.Context, key string, ids []string, ttl time.Duration) error {
-	data, err := json.Marshal(ids)
+func (c *RedisCache) RefreshHistory(ctx context.Context) error {
+	orderIDs, err := c.reportRepo.GetHistoryOrderIDs(ctx)
 	if err != nil {
 		return err
 	}
-	return c.client.Set(ctx, key, data, ttl).Err()
+	pipe := c.client.Pipeline()
+	pipe.Del(ctx, historyKey)
+	if len(orderIDs) > 0 {
+		pipe.SAdd(ctx, historyKey, orderIDs)
+	}
+	_, err = pipe.Exec(ctx)
+	return err
 }
 
 func calculateOrderTTL(order domain.Order) time.Duration {

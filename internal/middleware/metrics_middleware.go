@@ -19,7 +19,6 @@ func MetricsMiddleware() gin.HandlerFunc {
 		duration := time.Since(start).Seconds()
 		status := http.StatusText(c.Writer.Status())
 
-		// Записываем метрики
 		labels := prometheus.Labels{
 			"endpoint": c.FullPath(),
 			"method":   c.Request.Method,

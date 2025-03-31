@@ -1,6 +1,6 @@
 # UML диаграмма работы кэша
 
-![Кэш](https://cdn-0.plantuml.com/plantuml/png/tLLVQnD147_VJp7qAG7xftqyY3HjGXii9YQfh-NChlRWcWktbwA8e2bOmOfG1C6NAlW1eZQsjYP-XRrlvEouxLtJlPhuQE2IsztVpCxyvZUJPHcvOTJTyLdaHRu0TQGErNl6t5OKXA0-g7DrgWPg6FTO1u5Uo-kuxGXcYhKAhBjjxejm1bm9kBuAg8PSX0qHxdejGGZpRa7LHIUG7jxtX839yYgs5iZeKIWQzpO8LbgvUbmNt9EhRcjRq36zCUv6xWDN2g1JnWe5K9_YbpeZrO-VOsu_7DnH8tMYZbKVTp5Rm4LVdU63lr0ei3GDC7jR9-j0hTfemdoW4v2QBc_NZGJnW8z6cOGTABPQeXDHgZd2vnEy0J5cNj0mHO033NTNM2tJD2MlQ8x4E52vsoZNc_ZJh889iRG2isFEgtSO5pQ7wMY8I0n4s3CmHEjlWXFH22ytWP3EKuy_OxHBznDm_6hQjDswsU5ulYb5M6bpyJWtDpUNpuGLVR-eFOe9iEkUr9cca0dKLDZ4E5ufF298MXGEB2qimcee4CYpL7Q4AZkFz-9zsYUTdSOlufuQ4UGq9Jj4ViqKtbhvKdVpst_Ik5b_QwPq9kVxIpcB02rCePqn8VDAIUR-MlUrYxflNOJ6N3z2ik8tyIjG0vrmVC00FzSqWHVGWV6Pf90SsO8qklHu7jGnClmMYCJlk1YfRsg4napuKbm6yGkBW67OWsXtVJyh2dL4bbWnGjXRraeRuIsTHllNsxTHtYYlDW5rIG1BwwBNSLihOLnatJfHPw2RF1DjRkaEzOxcvJ1-hGPZqfscRHQmpR8wvX1z7-DwN_N7RfXeAizxKdR5pRrHqP0gmNDTgQjr2m9JjYd6TDeDLctICRrPAnMRPQ0u-PORJJUa_I3eO1biaa__WqtGE0d4FlExf0oUAOMFM8MJU0yZEOXxMB3UlodWCqO_rEN5Pm3uzSKipvEHUQPxcFwMapXIzQJ8w-9XAEIsRSmHPnW1aKNINLm0zHDz3x6tU_z1Nq_VtBPYBUD-TyV_3G00)
+![Кэш](https://cdn-0.plantuml.com/plantuml/png/jLPHQnD147w_Np7qAGsKreelWKYJDhJ1rjGczNszMyt1cOJRDL14i2bMGKGGGH6X2Fw0M1kR6bl_mku_SdPoSNDnhze72zVSxNupD_Dzysso8YIBvQE7aIT36N5GH-gDUkTvp9Vj6DG7DL93DL3dkkTr41ZwOOUr9CoLjgkmmLf1nECvO0BmEGsenG6FwppkXZudH7BlGEtmJbk4-Buz0jh7DDQint86R1TdmK4eLfdVv0IZEozWajrZWiDsMyW7CQ_VsJIRQsMxGt6ULoo2-gGFJUUghvyY1sS5N54NwbITg3wk8Yk03ttr7I_yX6BHcwOB5cuQKWgmNQitOB5j6XM6rh3B92U-y4BKX9W2b7oVToHHaYFylCLFsFEI6nDegIX0dNMvEtAAJdkBuTXs0QgtwvMTXhTMXeMPXBLRNi0TIL8L4AtuSfwg6l9v9lPQVZxlm9Q2eD7U28N9DSPNrowFsEsWEdnNyBY4vIHjYjnqa8rAMBVbfzZ3BO9C2rM0vQLhi1fp10PPoX-XyYDze9_JEca_rFkwfou8CinKVxtoM_p5vhZhnUxovNEmdj2Pi7HtEUSQ11P9x4E_qY_0JA7kwGFy79dtUu1_iqHItYHbRSmxaaXGsZT0cdxKSwkoLQxir26fc42q1mis7SPFHziEx5Ps8MCHoqpwpHoYtNLi6VQ8lCBZC11Ft7LGAdSfTfT7Wa_eGXrHEb9te4QpDTeJnQa4mIrcOgHwPREosW2z3-edol1L3Mb-3caWpYY8J9REhzxIMNAkNwh17ubj5mwWcrcClnzpqKpgJNc4jmA7JrA9h-2O9NHObba-erdEyJh6Qm3uxqloE9gunzZ55c_Rf2wI7fn37xNR7LDBNtrJ9wPck07gXo4RHUtzHSfI5DaJn8v_ffg9hp3xiI58FyEvpb8IirqYeDtFb2nrjf4ZK31NmzUN_hrZjzsp-qsTQV-jrQGgswLhy6Ystfjn8HFrQVnEnvRIhm65GIkhVjOaLLkXfBUwnkXg8t85UZE_lT9vBJAR7IT4VLHzb6X_OYxxpJllud05oSMVThy0)
 
 
 # Код UML диаграммы
@@ -13,8 +13,9 @@ actor Клиент
 participant "API Handler" as API
 participant "OrderService" as Service
 participant "OrderRepository" as Repository
-participant "PostgreSQL" as DB
+participant "ReportRepository" as ReportRepo
 participant "RedisCache" as Cache
+database PostgreSQL as DB
 database Redis
 
 == Сценарий: Создание заказа ==
@@ -25,88 +26,77 @@ activate Service
 
 Service -> Repository: SaveOrder(order)
 activate Repository
-Repository -> DB: INSERT INTO orders
+Repository -> DB: INSERT
 DB --> Repository: OK
 deactivate Repository
 
-Service -> Cache: SetOrder(order)
-activate Cache
-Cache -> Redis: SET order:{id}
-Redis --> Cache: OK
-deactivate Cache
-
-Service -> Cache: UpdateUserIndex(...)
-Service -> Cache: UpdateAllActiveIndex(...)
-Service -> Cache: UpdateHistoryIndex(...)
+Service -> Cache: SetOrder(order) **async**
+Service -> Cache: AddToHistory(orderID) **async**
+Service -> Cache: UpdateUserActiveOrders() **async**
 
 Service --> API: OK
 deactivate Service
 API --> Клиент: 201 Created
 
-== Сценарий: Получение истории заказов ==
-Клиент -> API: GET /orders/history
+== Сценарий: Получение истории ==
+Клиент -> API: GET /orders/history/v2
 activate API
 API -> Service: GetOrderHistoryV2()
 activate Service
 
-Service -> Cache: GetHistoryOrderIDs()
-activate Cache
-Cache -> Redis: GET order_history
-
-alt Кэш есть
+alt Кэш актуален
+    Service -> Cache: GetHistoryOrderIDs()
+    Cache -> Redis: SMEMBERS history
     Redis --> Cache: IDs
     Cache --> Service: IDs
-    Service -> Cache: GetOrder(id) для каждого ID
-else Кэш пуст
-    Redis --> Cache: null
-    Cache --> Service: Пусто
-    Service -> Repository: GetHistoryOrderIDs()
-    activate Repository
-    Repository -> DB: SELECT ...
-    DB --> Repository: IDs
-    Repository --> Service: IDs
-    deactivate Repository
-    Service -> Cache: UpdateHistoryIndex(IDs)
+    
+    Service -> Cache: GetOrdersBatch(IDs)
+    Cache -> Redis: MGET order:{ids}
+    Redis --> Cache: Orders
+    Cache --> Service: Orders
+else Кэш устарел
+    Service -> ReportRepo: GetOrderHistoryV2()
+    ReportRepo -> DB: SELECT с пагинацией
+    DB --> ReportRepo: Данные
+    ReportRepo --> Service: Данные
+    
+    Service -> Cache: RefreshHistory() **async**
 end
 
-Service --> API: Данные заказов
+Service --> API: Данные
 deactivate Service
 API --> Клиент: 200 OK
 
-== Сценарий: Выдача заказов ==
-Клиент -> API: POST /orders/issue
-activate API
-API -> Service: IssueOrders(userID, orderIDs)
-activate Service
-
-Service -> Repository: IssueOrders(...)
-activate Repository
-Repository -> DB: UPDATE issued_at
-DB --> Repository: OK
-deactivate Repository
-
-loop Для каждого заказа
-    Service -> Cache: GetOrder(id)
-    Service -> Cache: SetOrder(updated)
-end
-
-Service --> API: Результат
-deactivate Service
-API --> Клиент: 200 OK
-
-== Фоновое обновление кэша ==
+== Сценарий: Фоновое обновление ==
 Service -> Service: CacheRefresh()
 activate Service
-loop Каждые 10 минут
-    Service -> Repository: GetHistoryOrderIDs()
-    activate Repository
-    Repository -> DB: SELECT ...
-    DB --> Repository: IDs
-    Repository --> Service: IDs
-    deactivate Repository
-    
-    Service -> Cache: UpdateHistoryIndex(IDs)
+
+loop Каждые 5 минут
+    Service -> ReportRepo: GetAllActiveOrderIDs()
+    ReportRepo -> DB: SELECT активных ID
+    DB --> ReportRepo: IDs
+    ReportRepo --> Service: IDs
+    Service -> Cache: RefreshActiveOrders(IDs)
 end
+
+loop Каждые 30 минут
+    Service -> ReportRepo: GetHistoryOrderIDs()
+    ReportRepo -> DB: SELECT истории
+    DB --> ReportRepo: IDs
+    ReportRepo --> Service: IDs
+    Service -> Cache: RefreshHistory(IDs)
+end
+
+deactivate Service
+
+== Инициализация кэша ==
+Service -> Service: InitCache()
+activate Service
+Service -> ReportRepo: GetAllActiveOrderIDs()
+Service -> ReportRepo: GetHistoryOrderIDs()
+Service -> Cache: UpdateAllActiveOrders()
+Service -> Cache: RefreshHistory()
+Service -> Cache: Массовое SetOrder()
 deactivate Service
 @enduml
 

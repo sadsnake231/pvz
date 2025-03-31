@@ -76,3 +76,32 @@ func (s *OrderStorage) FindOrderByID(ctx context.Context, id string) (*domain.Or
 	row := s.db.QueryRow(ctx, query, id)
 	return storageutils.ScanOrder(row)
 }
+
+func (s *OrderStorage) FindOrdersByIDs(ctx context.Context, ids []string) ([]*domain.Order, error) {
+	query := `SELECT 
+			order_id, recipient_id, expiry,
+			stored_at, issued_at, refunded_at,
+			base_price, weight, packaging
+		FROM orders WHERE order_id = ANY($1)`
+
+	rows, err := s.db.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*domain.Order
+	for rows.Next() {
+		order, err := storageutils.ScanOrder(rows)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}

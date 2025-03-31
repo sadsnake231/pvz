@@ -10,6 +10,7 @@ import (
 type OrderStorage interface {
 	SaveOrder(ctx context.Context, order domain.Order) error
 	FindOrderByID(ctx context.Context, id string) (*domain.Order, error)
+	FindOrdersByIDs(ctx context.Context, ids []string) ([]*domain.Order, error)
 	DeleteOrder(ctx context.Context, id string) error
 }
 

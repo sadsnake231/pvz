@@ -26,15 +26,19 @@ func GetRedisClient(addr, password string) *redis.Client {
 type OrderCache interface {
 	SetOrder(ctx context.Context, order domain.Order) error
 	GetOrder(ctx context.Context, orderID string) (*domain.Order, error)
+	GetOrdersBatch(ctx context.Context, orderIDs []string) (map[string]*domain.Order, error)
 	DeleteOrder(ctx context.Context, orderID string) error
 
 	GetAllActiveOrderIDs(ctx context.Context) ([]string, error)
-	UpdateAllActiveIndex(ctx context.Context, orderIDs []string) error
+	UpdateAllActiveOrders(ctx context.Context, orderIDs []string) error
 	GetUserActiveOrders(ctx context.Context, userID string) ([]string, error)
-	UpdateUserIndex(ctx context.Context, userID string, orderIDs []string) error
+	UpdateUserActiveOrders(ctx context.Context, userID string, orderIDs []string) error
 	DeleteUserIndex(ctx context.Context, userID string) error
 
 	GetHistoryOrderIDs(ctx context.Context) ([]string, error)
-	UpdateHistoryIndex(ctx context.Context, orderIDs []string) error
-	DeleteFromHistory(ctx context.Context, orderID string) error
+	AddToHistory(ctx context.Context, orderID string) error
+	RemoveFromHistory(ctx context.Context, orderID string) error
+
+	RefreshActiveOrders(ctx context.Context) error
+	RefreshHistory(ctx context.Context) error
 }

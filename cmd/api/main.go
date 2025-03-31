@@ -45,7 +45,6 @@ func main() {
 	defer db.Close()
 
 	redisClient := cache.GetRedisClient("localhost:6379", "")
-	cache := cache.NewRedisCache(redisClient)
 
 	metrics.RegisterMetrics()
 	metrics.StartMetricsServer()
@@ -62,6 +61,8 @@ func main() {
 
 	authRepo := authrepo.NewAuthRepository(authStorage, logger)
 	auditRepo := auditrepo.NewAuditRepository(auditStorage, logger)
+
+	cache := cache.NewRedisCache(redisClient, reportRepo)
 
 	orderService := service.NewOrderService(orderRepo, userRepo, reportRepo, cache, logger)
 	authService := service.NewAuthService(authRepo)

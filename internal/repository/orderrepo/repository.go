@@ -15,6 +15,7 @@ type OrderRepository interface {
 	AcceptOrder(ctx context.Context, order domain.Order) error
 	ReturnOrder(ctx context.Context, id string) error
 	FindOrderByID(ctx context.Context, id string) (*domain.Order, error)
+	FindOrdersByIDs(ctx context.Context, ids []string) ([]*domain.Order, error)
 }
 
 type orderRepository struct {
@@ -93,4 +94,16 @@ func (r *orderRepository) FindOrderByID(ctx context.Context, id string) (*domain
 		return nil, err
 	}
 	return order, nil
+}
+
+func (r *orderRepository) FindOrdersByIDs(ctx context.Context, ids []string) ([]*domain.Order, error) {
+	if len(ids) == 0 {
+		return nil, domain.ErrNullOrderIDs
+	}
+	orders, err := r.orderStorage.FindOrdersByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, nil
 }

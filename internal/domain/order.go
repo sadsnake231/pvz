@@ -40,6 +40,7 @@ var (
 	ErrNotExpiredOrder = errors.New("у этого заказа еще не истек срок хранения")
 
 	ErrNotFoundOrder       = errors.New("заказа с таким ID не существует")
+	ErrNullOrderIDs        = errors.New("список id заказов пуст")
 	ErrNotStoredOrder      = errors.New("заказа нет на складе")
 	ErrNotIssuedOrder      = errors.New("заказ ещё не был выдан")
 	ErrUserNoOrders        = errors.New("введенные заказы не готовы к выдаче или возврату")
