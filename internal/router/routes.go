@@ -1,6 +1,8 @@
 package router
 
 import (
+	"net/http"
+
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/api"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/middleware"
@@ -50,6 +52,13 @@ func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, audit
 	audit.Use(middleware.AuthMiddleware())
 	{
 		audit.GET("", auditHandler.GetLogs)
+	}
+
+	health := router.Group("/health")
+	{
+		health.GET("", func(c *gin.Context) {
+			c.Status(http.StatusOK)
+		})
 	}
 
 	return router
