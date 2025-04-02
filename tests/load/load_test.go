@@ -113,7 +113,7 @@ func runAttack(name string, targeter vegeta.Targeter, rate int, duration time.Du
 }
 
 func healthCheck() bool {
-	for i := 0; i < healthCheckRetry; i++ {
+	for range healthCheckRetry {
 		resp, err := httpClient.Get(baseURL + "/health")
 		if err == nil && resp.StatusCode == http.StatusOK {
 			return true
@@ -128,7 +128,7 @@ func registerAndLoginUsers() error {
 	errCh := make(chan error, userCount)
 
 	wg.Add(userCount)
-	for i := 0; i < userCount; i++ {
+	for i := range userCount {
 		go func(i int) {
 			defer wg.Done()
 			if err := registerUser(i); err != nil {
@@ -145,7 +145,7 @@ func registerAndLoginUsers() error {
 
 	errCh = make(chan error, userCount)
 	wg.Add(userCount)
-	for i := 0; i < userCount; i++ {
+	for i := range userCount {
 		go func(i int) {
 			defer wg.Done()
 			if err := loginUser(i); err != nil {

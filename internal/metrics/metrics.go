@@ -1,10 +1,7 @@
 package metrics
 
 import (
-	"net/http"
-
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -75,19 +72,23 @@ var (
 	)
 )
 
-func RegisterMetrics() {
-	prometheus.MustRegister(HTTPRequestCount)
-	prometheus.MustRegister(HTTPResponseStatusCount)
-	prometheus.MustRegister(CacheHits)
-	prometheus.MustRegister(CacheMisses)
-	prometheus.MustRegister(CacheOperations)
-	prometheus.MustRegister(DBQueryDuration)
-	prometheus.MustRegister(OrdersProcessed)
-}
+func RegisterMetrics() error {
+	collectors := []prometheus.Collector{
+		HTTPRequestCount,
+		HTTPResponseStatusCount,
+		CacheHits,
+		CacheMisses,
+		CacheOperations,
+		DBQueryDuration,
+		OrdersProcessed,
+		APIResponseTime,
+	}
 
-func StartMetricsServer() {
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		http.ListenAndServe(":2112", nil)
-	}()
+	for _, collector := range collectors {
+		if err := prometheus.Register(collector); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

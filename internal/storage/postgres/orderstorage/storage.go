@@ -60,8 +60,13 @@ func (s *OrderStorage) DeleteOrder(ctx context.Context, id string) error {
 	defer tx.Rollback(ctx)
 
 	query := `DELETE FROM orders WHERE order_id = $1`
-	if _, err := tx.Exec(ctx, query, id); err != nil {
+	result, err := tx.Exec(ctx, query, id)
+	if err != nil {
 		return err
+	}
+
+	if rowsAffected := result.RowsAffected(); rowsAffected == 0 {
+		return domain.ErrNotFoundOrder
 	}
 
 	return tx.Commit(ctx)

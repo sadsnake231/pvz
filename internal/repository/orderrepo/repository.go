@@ -80,12 +80,12 @@ func (r *orderRepository) ReturnOrder(ctx context.Context, id string) error {
 		return domain.ErrNotExpiredOrder
 	}
 
-	if err := r.orderStorage.DeleteOrder(ctx, id); err != nil {
+	if err := r.orderStorage.DeleteOrder(ctx, id); err != nil && !errors.Is(err, domain.ErrNotFoundOrder) {
 		r.logger.Error("Не удалось удалить заказ", zap.String("orderID", id), zap.Error(err))
 		return domain.ErrDatabase
 	}
 
-	return nil
+	return err
 }
 
 func (r *orderRepository) FindOrderByID(ctx context.Context, id string) (*domain.Order, error) {

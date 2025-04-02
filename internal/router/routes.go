@@ -61,5 +61,10 @@ func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, audit
 		})
 	}
 
+	metrics := router.Group("/metrics")
+	{
+		metrics.GET("", apiHandler.GetMetrics)
+	}
+
 	return router
 }

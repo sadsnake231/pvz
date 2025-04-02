@@ -44,10 +44,12 @@ func main() {
 	}
 	defer db.Close()
 
-	redisClient := cache.GetRedisClient("localhost:6379", "")
+	redisClient := cache.GetRedisClient(cfg.CacheURL, cfg.CachePassword)
 
-	metrics.RegisterMetrics()
-	metrics.StartMetricsServer()
+	err = metrics.RegisterMetrics()
+	if err != nil {
+		logger.Error("Не удалось зарегистрировать метрику", zap.Error(err))
+	}
 
 	orderStorage := orderstorage.NewOrderStorage(db)
 	userOrderStorage := userorder.NewUserOrderStorage(db)

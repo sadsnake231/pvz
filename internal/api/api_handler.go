@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
@@ -318,4 +319,9 @@ func (h *APIHandler) GetOrderHistoryV2(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"orders": orders})
+}
+
+func (h *APIHandler) GetMetrics(c *gin.Context) {
+	handler := promhttp.Handler()
+	handler.ServeHTTP(c.Writer, c.Request)
 }
