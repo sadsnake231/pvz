@@ -70,6 +70,15 @@ var (
 		},
 		[]string{"endpoint", "method", "status"},
 	)
+
+	KafkaMessages = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "kafka_consumer_messages_total",
+		Help: "Total messages consumed",
+	})
+	KafkaErrors = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "kafka_consumer_errors_total",
+		Help: "Total processing errors",
+	})
 )
 
 func RegisterMetrics() error {
@@ -82,6 +91,8 @@ func RegisterMetrics() error {
 		DBQueryDuration,
 		OrdersProcessed,
 		APIResponseTime,
+		KafkaMessages,
+		KafkaErrors,
 	}
 
 	for _, collector := range collectors {

@@ -11,6 +11,7 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/cache"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/config"
 	database "gitlab.ozon.dev/sadsnake2311/homework/internal/db"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/kafka"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/metrics"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/middleware"
 	auditrepo "gitlab.ozon.dev/sadsnake2311/homework/internal/repository/auditlogrepo"
@@ -78,6 +79,30 @@ func main() {
 	apiHandler := api.NewAPIHandler(orderService, auditPipeline)
 	authHandler := api.NewAuthHandler(authService, logger)
 	auditHandler := api.NewAuditHandler(auditService)
+
+	kafkaProducer, err := kafka.NewProducer(cfg.KafkaBrokers, logger)
+	if err != nil {
+		logger.Fatalw("Kafka Producer не запустился", "error", err)
+	}
+
+	outboxWorker := audit.NewOutboxWorker(auditService, kafkaProducer, logger)
+
+	kafkaConsumer, err := kafka.NewConsumer(cfg.KafkaBrokers, "audit-consumer-group-2", kafkaProducer, logger)
+	if err != nil {
+		logger.Fatalw("Kafka Consumer не запустился", "error", err)
+	}
+
+	kafkaCtx, _ := context.WithCancel(context.Background())
+
+	go func() {
+		outboxWorker.Run(kafkaCtx)
+	}()
+
+	go func() {
+		if err := kafkaConsumer.Run(kafkaCtx); err != nil {
+			logger.Errorw("Kafka Consumer остановился", "error", err)
+		}
+	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

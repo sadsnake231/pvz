@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -13,6 +14,7 @@ type Config struct {
 	AuditFilter   string
 	CacheURL      string
 	CachePassword string
+	KafkaBrokers  []string
 }
 
 func Load() *Config {
@@ -26,6 +28,7 @@ func Load() *Config {
 		AuditFilter:   getEnv("AUDIT_FILTER", ""),
 		CacheURL:      getEnv("CACHE_URL", ""),
 		CachePassword: getEnv("CACHE_PASSWORD", ""),
+		KafkaBrokers:  strings.Split(getEnv("KAFKA_BROKERS", ""), ","),
 	}
 }
 

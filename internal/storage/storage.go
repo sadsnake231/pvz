@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/kafka"
 )
 
 type OrderStorage interface {
@@ -35,6 +36,8 @@ type AuthStorage interface {
 }
 
 type AuditLogStorage interface {
-	SaveLog(ctx context.Context, log domain.Event) error
-	GetLogs(ctx context.Context, limit int, cursor *int) ([]domain.Event, int, error)
+	SaveLog(ctx context.Context, auditTask domain.AuditTask) error
+	FetchPendingTasks(ctx context.Context, limit int) ([]domain.AuditTask, error)
+	UpdateTask(ctx context.Context, task domain.AuditTask) error
+	ProcessTaskWithKafka(ctx context.Context, task domain.AuditTask, kafkaProducer *kafka.Producer) error
 }

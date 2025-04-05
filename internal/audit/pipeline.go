@@ -41,12 +41,6 @@ func (p *Pipeline) saveToDB(ctx context.Context) func(domain.Event) error {
 
 func (p *Pipeline) printToStdout(filterFunc FilterFunc) func(domain.Event) error {
 	return func(e domain.Event) error {
-		if filterFunc(e) {
-			p.logger.Infow("[AUDIT]",
-				"event_type", e.Type,
-				"data", e.Data,
-			)
-		}
 		return nil
 	}
 }

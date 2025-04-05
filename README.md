@@ -1,3 +1,44 @@
+# Настройка Kafka
+
+Kafka+Zookeeper вообще не хотели работать в докер контейнере. Потратив неприличное количество часов на попытку их настроить, я установил кафку локально и использовал встроенный kraft.
+
+файл kafka/config/kraft/server.properties
+
+```
+process.roles=broker,controller
+node.id=1
+controller.quorum.voters=1@localhost:9093
+
+listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+controller.listener.names=CONTROLLER
+listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+inter.broker.listener.name=PLAINTEXT
+advertised.listeners=PLAINTEXT://localhost:9092
+
+log.dirs=/tmp/kraft-combined-logs
+
+inter.broker.protocol.version=3.6-IV1
+log.message.format.version=3.6-IV1
+transaction.state.log.replication.factor=1
+transaction.state.log.min.isr=1
+
+auto.create.topics.enable=true
+
+
+```
+
+еще понадобилось создать топик
+
+```sh
+./bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --create \
+  --topic __consumer_offsets \
+  --partitions 50 \
+  --replication-factor 1 \
+  --config cleanup.policy=compact
+```
+
 # UML диаграмма работы кэша
 
 ![Кэш](https://cdn-0.plantuml.com/plantuml/png/jLPHQnD147w_Np7qAGsKreelWKYJDhJ1rjGczNszMyt1cOJRDL14i2bMGKGGGH6X2Fw0M1kR6bl_mku_SdPoSNDnhze72zVSxNupD_Dzysso8YIBvQE7aIT36N5GH-gDUkTvp9Vj6DG7DL93DL3dkkTr41ZwOOUr9CoLjgkmmLf1nECvO0BmEGsenG6FwppkXZudH7BlGEtmJbk4-Buz0jh7DDQint86R1TdmK4eLfdVv0IZEozWajrZWiDsMyW7CQ_VsJIRQsMxGt6ULoo2-gGFJUUghvyY1sS5N54NwbITg3wk8Yk03ttr7I_yX6BHcwOB5cuQKWgmNQitOB5j6XM6rh3B92U-y4BKX9W2b7oVToHHaYFylCLFsFEI6nDegIX0dNMvEtAAJdkBuTXs0QgtwvMTXhTMXeMPXBLRNi0TIL8L4AtuSfwg6l9v9lPQVZxlm9Q2eD7U28N9DSPNrowFsEsWEdnNyBY4vIHjYjnqa8rAMBVbfzZ3BO9C2rM0vQLhi1fp10PPoX-XyYDze9_JEca_rFkwfou8CinKVxtoM_p5vhZhnUxovNEmdj2Pi7HtEUSQ11P9x4E_qY_0JA7kwGFy79dtUu1_iqHItYHbRSmxaaXGsZT0cdxKSwkoLQxir26fc42q1mis7SPFHziEx5Ps8MCHoqpwpHoYtNLi6VQ8lCBZC11Ft7LGAdSfTfT7Wa_eGXrHEb9te4QpDTeJnQa4mIrcOgHwPREosW2z3-edol1L3Mb-3caWpYY8J9REhzxIMNAkNwh17ubj5mwWcrcClnzpqKpgJNc4jmA7JrA9h-2O9NHObba-erdEyJh6Qm3uxqloE9gunzZ55c_Rf2wI7fn37xNR7LDBNtrJ9wPck07gXo4RHUtzHSfI5DaJn8v_ffg9hp3xiI58FyEvpb8IirqYeDtFb2nrjf4ZK31NmzUN_hrZjzsp-qsTQV-jrQGgswLhy6Ystfjn8HFrQVnEnvRIhm65GIkhVjOaLLkXfBUwnkXg8t85UZE_lT9vBJAR7IT4VLHzb6X_OYxxpJllud05oSMVThy0)

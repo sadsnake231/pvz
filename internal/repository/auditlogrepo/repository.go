@@ -4,13 +4,16 @@ import (
 	"context"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/kafka"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage"
 	"go.uber.org/zap"
 )
 
 type AuditRepository interface {
-	SaveLog(ctx context.Context, event domain.Event) error
-	GetLogs(ctx context.Context, limit int, cursor *int) ([]domain.Event, int, error)
+	SaveLog(ctx context.Context, auditTask domain.AuditTask) error
+	FetchPendingTasks(ctx context.Context, limit int) ([]domain.AuditTask, error)
+	UpdateTask(ctx context.Context, task domain.AuditTask) error
+	ProcessTaskWithKafka(ctx context.Context, task domain.AuditTask, kafkaProducer *kafka.Producer) error
 }
 
 type auditRepository struct {
@@ -25,16 +28,18 @@ func NewAuditRepository(storage storage.AuditLogStorage, logger *zap.SugaredLogg
 	}
 }
 
-func (r *auditRepository) SaveLog(ctx context.Context, event domain.Event) error {
-	return r.storage.SaveLog(ctx, event)
+func (r *auditRepository) SaveLog(ctx context.Context, auditTask domain.AuditTask) error {
+	return r.storage.SaveLog(ctx, auditTask)
 }
 
-func (r *auditRepository) GetLogs(ctx context.Context, limit int, cursor *int) ([]domain.Event, int, error) {
-	logs, nextCursor, err := r.storage.GetLogs(ctx, limit, cursor)
-	if err != nil {
-		r.logger.Error("ошибка вывода аудит логов", zap.Error(err))
-		return logs, nextCursor, domain.ErrDatabase
-	}
+func (r *auditRepository) FetchPendingTasks(ctx context.Context, limit int) ([]domain.AuditTask, error) {
+	return r.storage.FetchPendingTasks(ctx, limit)
+}
 
-	return logs, nextCursor, nil
+func (r *auditRepository) UpdateTask(ctx context.Context, task domain.AuditTask) error {
+	return r.storage.UpdateTask(ctx, task)
+}
+
+func (r *auditRepository) ProcessTaskWithKafka(ctx context.Context, task domain.AuditTask, kafkaProducer *kafka.Producer) error {
+	return r.storage.ProcessTaskWithKafka(ctx, task, kafkaProducer)
 }
