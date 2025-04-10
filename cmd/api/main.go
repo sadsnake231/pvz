@@ -87,25 +87,10 @@ func main() {
 
 	outboxWorker := audit.NewOutboxWorker(auditService, kafkaProducer, logger)
 
-	kafkaConsumer, err := kafka.NewConsumer(cfg.KafkaBrokers, "audit-consumer-group-2", kafkaProducer, logger)
-	if err != nil {
-		logger.Fatalw("Kafka Consumer не запустился", "error", err)
-	}
-
-	kafkaCtx, _ := context.WithCancel(context.Background())
-
-	go func() {
-		outboxWorker.Run(kafkaCtx)
-	}()
-
-	go func() {
-		if err := kafkaConsumer.Run(kafkaCtx); err != nil {
-			logger.Errorw("Kafka Consumer остановился", "error", err)
-		}
-	}()
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+
+	go outboxWorker.Run(ctx)
 
 	auditPipeline.StartWorkers(ctx, filterFunc)
 

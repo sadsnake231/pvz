@@ -9,12 +9,14 @@ import (
 )
 
 type Config struct {
-	DatabaseURL   string
-	HTTPPort      string
-	AuditFilter   string
-	CacheURL      string
-	CachePassword string
-	KafkaBrokers  []string
+	DatabaseURL        string
+	HTTPPort           string
+	AuditFilter        string
+	CacheURL           string
+	CachePassword      string
+	KafkaBrokers       []string
+	KafkaConsumerGroup string
+	KafkaTopic         string
 }
 
 func Load() *Config {
@@ -23,12 +25,14 @@ func Load() *Config {
 	}
 
 	return &Config{
-		DatabaseURL:   getEnv("DATABASE_URL", ""),
-		HTTPPort:      getEnv("HTTP_PORT", ":9000"),
-		AuditFilter:   getEnv("AUDIT_FILTER", ""),
-		CacheURL:      getEnv("CACHE_URL", ""),
-		CachePassword: getEnv("CACHE_PASSWORD", ""),
-		KafkaBrokers:  strings.Split(getEnv("KAFKA_BROKERS", ""), ","),
+		DatabaseURL:        getEnv("DATABASE_URL", ""),
+		HTTPPort:           getEnv("HTTP_PORT", ":9000"),
+		AuditFilter:        getEnv("AUDIT_FILTER", ""),
+		CacheURL:           getEnv("CACHE_URL", ""),
+		CachePassword:      getEnv("CACHE_PASSWORD", ""),
+		KafkaBrokers:       strings.Split(getEnv("KAFKA_BROKERS", ""), ","),
+		KafkaConsumerGroup: getEnv("KAFKA_CONSUMER_GROUP", ""),
+		KafkaTopic:         getEnv("KAFKA_TOPIC", ""),
 	}
 }
 

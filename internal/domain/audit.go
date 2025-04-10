@@ -26,14 +26,14 @@ type Event struct {
 }
 
 type AuditTask struct {
-	ID           int
-	AuditLog     []byte
-	Status       TaskStatus
-	AttemptsLeft int
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	FinishedAt   time.Time
-	NextRetry    time.Time
+	ID            int
+	AuditLog      []byte
+	Status        TaskStatus
+	AttemptNumber int
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	FinishedAt    time.Time
+	NextRetry     time.Time
 }
 
 func NewEvent(t EventType, data any) Event {

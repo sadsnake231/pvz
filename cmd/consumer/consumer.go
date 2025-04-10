@@ -1,11 +1,9 @@
-package kafka
+package main
 
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
+	"sync"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -13,24 +11,22 @@ import (
 )
 
 type Consumer struct {
-	client   *kgo.Client
-	producer *Producer
-	groupID  string
-	logger   *zap.SugaredLogger
+	client  *kgo.Client
+	groupID string
+	logger  *zap.SugaredLogger
+	wg      sync.WaitGroup
 }
 
-func NewConsumer(brokers []string, groupID string, producer *Producer, logger *zap.SugaredLogger) (*Consumer, error) {
+func NewConsumer(brokers []string, groupID, topic string, logger *zap.SugaredLogger) (*Consumer, error) {
 	opts := []kgo.Opt{
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumerGroup(groupID),
-		kgo.ConsumeTopics("audit_logs"),
+		kgo.ConsumeTopics(topic),
 		kgo.FetchIsolationLevel(kgo.ReadCommitted()),
 		kgo.DisableAutoCommit(),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()),
-
 		kgo.SessionTimeout(30 * time.Second),
 		kgo.HeartbeatInterval(5 * time.Second),
-
 		kgo.OnPartitionsRevoked(func(ctx context.Context, client *kgo.Client, revoked map[string][]int32) {
 			if err := client.CommitUncommittedOffsets(ctx); err != nil {
 				logger.Errorw("Failed to commit offsets during rebalance", "error", err)
@@ -43,28 +39,38 @@ func NewConsumer(brokers []string, groupID string, producer *Producer, logger *z
 
 	client, err := kgo.NewClient(opts...)
 	if err != nil {
-		return nil, fmt.Errorf("не смог запустить клиент Кафки: %w", err)
+		return nil, fmt.Errorf("не смог запустить клиент Kafka: %w", err)
 	}
 
 	return &Consumer{
-		client:   client,
-		producer: producer,
-		groupID:  groupID,
-		logger:   logger,
+		client:  client,
+		groupID: groupID,
+		logger:  logger,
 	}, nil
 }
 
-func (c *Consumer) Run(ctx context.Context) error {
-	defer c.client.Close()
+func (c *Consumer) Start(ctx context.Context) {
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		if err := c.run(ctx); err != nil {
+			c.logger.Errorw("Kafka Consumer остановился", "error", err)
+		}
+	}()
+}
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+func (c *Consumer) Wait() {
+	c.wg.Wait()
+}
 
+func (c *Consumer) Close() {
+	c.client.Close()
+}
+
+func (c *Consumer) run(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
-		case <-sigCh:
 			return nil
 		default:
 			fetches := c.client.PollFetches(ctx)
@@ -93,7 +99,6 @@ func (c *Consumer) Run(ctx context.Context) error {
 					)
 					return
 				}
-
 				c.client.MarkCommitRecords(record)
 			})
 

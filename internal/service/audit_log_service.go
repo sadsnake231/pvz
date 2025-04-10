@@ -5,16 +5,16 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
-	"gitlab.ozon.dev/sadsnake2311/homework/internal/kafka"
 	repository "gitlab.ozon.dev/sadsnake2311/homework/internal/repository/auditlogrepo"
 )
 
 type AuditService interface {
 	SaveLog(ctx context.Context, event domain.Event) error
-	FetchPendingTasks(ctx context.Context, limit int) ([]domain.AuditTask, error)
+	BeginTx(ctx context.Context) (pgx.Tx, error)
+	FetchPendingTasksTx(ctx context.Context, tx pgx.Tx, limit int) ([]domain.AuditTask, error)
 	UpdateTask(ctx context.Context, task domain.AuditTask) error
-	ProcessTaskWithKafka(ctx context.Context, task domain.AuditTask, kafkaProducer *kafka.Producer) error
 }
 
 type auditService struct {
@@ -32,26 +32,26 @@ func (s *auditService) SaveLog(ctx context.Context, event domain.Event) error {
 	}
 
 	auditTask := domain.AuditTask{
-		AuditLog:     auditLogJSON,
-		Status:       "CREATED",
-		AttemptsLeft: 3,
-		CreatedAt:    event.Time,
-		UpdatedAt:    event.Time,
+		AuditLog:      auditLogJSON,
+		Status:        "CREATED",
+		AttemptNumber: 0,
+		CreatedAt:     event.Time,
+		UpdatedAt:     event.Time,
 	}
 
 	return s.repo.SaveLog(ctx, auditTask)
 }
 
-func (s *auditService) FetchPendingTasks(ctx context.Context, limit int) ([]domain.AuditTask, error) {
-	return s.repo.FetchPendingTasks(ctx, limit)
+func (s *auditService) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	return s.repo.BeginTx(ctx)
+}
+
+func (s *auditService) FetchPendingTasksTx(ctx context.Context, tx pgx.Tx, limit int) ([]domain.AuditTask, error) {
+	return s.repo.FetchPendingTasksTx(ctx, tx, limit)
 }
 
 func (s *auditService) UpdateTask(ctx context.Context, task domain.AuditTask) error {
 	task.UpdatedAt = time.Now()
 
 	return s.repo.UpdateTask(ctx, task)
-}
-
-func (s *auditService) ProcessTaskWithKafka(ctx context.Context, task domain.AuditTask, kafkaProducer *kafka.Producer) error {
-	return s.repo.ProcessTaskWithKafka(ctx, task, kafkaProducer)
 }

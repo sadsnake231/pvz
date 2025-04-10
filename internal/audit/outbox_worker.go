@@ -54,9 +54,21 @@ func (w *OutboxWorker) Run(ctx context.Context) {
 }
 
 func (w *OutboxWorker) processBatch(ctx context.Context) {
-	tasks, err := w.service.FetchPendingTasks(ctx, w.batchSize)
+	tx, err := w.service.BeginTx(ctx)
+	if err != nil {
+		w.logger.Errorw("Не смог начать транзакцию", "error", err)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	tasks, err := w.service.FetchPendingTasksTx(ctx, tx, w.batchSize)
 	if err != nil {
 		w.logger.Errorw("Не смог получить таски", "error", err)
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		w.logger.Errorw("Не смог закоммитить транзакцию", "error", err)
 		return
 	}
 
@@ -79,6 +91,33 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 }
 
 func (w *OutboxWorker) processTask(ctx context.Context, task domain.AuditTask) error {
-	err := w.service.ProcessTaskWithKafka(ctx, task, w.kafkaProducer)
-	return err
+	now := time.Now().UTC()
+
+	task.Status = domain.StatusProcessing
+	task.UpdatedAt = now
+	if err := w.service.UpdateTask(ctx, task); err != nil {
+		return err
+	}
+
+	kafkaCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	err := w.kafkaProducer.SendTransactional(kafkaCtx, task.ID, task.AuditLog)
+	if err != nil {
+		task.AttemptNumber++
+		task.Status = domain.StatusFailed
+		task.NextRetry = now.Add(w.retryDelay)
+		task.UpdatedAt = now
+
+		if task.AttemptNumber >= w.maxAttempts {
+			task.Status = domain.StatusNoAttemptsLeft
+		}
+
+		return w.service.UpdateTask(ctx, task)
+	}
+
+	task.Status = domain.StatusFinished
+	task.UpdatedAt = now
+	task.FinishedAt = now
+	return w.service.UpdateTask(ctx, task)
 }
