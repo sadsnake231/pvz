@@ -10,7 +10,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -27,7 +26,7 @@ type AcceptOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	RecipientId   string                 `protobuf:"bytes,2,opt,name=recipient_id,json=recipientId,proto3" json:"recipient_id,omitempty"`
-	Expiry        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	Expiry        string                 `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	BasePrice     float64                `protobuf:"fixed64,4,opt,name=base_price,json=basePrice,proto3" json:"base_price,omitempty"`
 	Weight        float64                `protobuf:"fixed64,5,opt,name=weight,proto3" json:"weight,omitempty"`
 	Packaging     string                 `protobuf:"bytes,6,opt,name=packaging,proto3" json:"packaging,omitempty"`
@@ -79,11 +78,11 @@ func (x *AcceptOrderRequest) GetRecipientId() string {
 	return ""
 }
 
-func (x *AcceptOrderRequest) GetExpiry() *timestamppb.Timestamp {
+func (x *AcceptOrderRequest) GetExpiry() string {
 	if x != nil {
 		return x.Expiry
 	}
-	return nil
+	return ""
 }
 
 func (x *AcceptOrderRequest) GetBasePrice() float64 {
@@ -586,7 +585,7 @@ func (x *GetRefundedOrdersResponse) GetNextCursor() string {
 type GetOrderHistoryRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Limit             int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	LastUpdatedCursor *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_updated_cursor,json=lastUpdatedCursor,proto3" json:"last_updated_cursor,omitempty"`
+	LastUpdatedCursor string                 `protobuf:"bytes,2,opt,name=last_updated_cursor,json=lastUpdatedCursor,proto3" json:"last_updated_cursor,omitempty"`
 	IdCursor          int32                  `protobuf:"varint,3,opt,name=id_cursor,json=idCursor,proto3" json:"id_cursor,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -629,11 +628,11 @@ func (x *GetOrderHistoryRequest) GetLimit() int32 {
 	return 0
 }
 
-func (x *GetOrderHistoryRequest) GetLastUpdatedCursor() *timestamppb.Timestamp {
+func (x *GetOrderHistoryRequest) GetLastUpdatedCursor() string {
 	if x != nil {
 		return x.LastUpdatedCursor
 	}
-	return nil
+	return ""
 }
 
 func (x *GetOrderHistoryRequest) GetIdCursor() int32 {
@@ -875,11 +874,10 @@ type Order struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	RecipientId   string                 `protobuf:"bytes,2,opt,name=recipient_id,json=recipientId,proto3" json:"recipient_id,omitempty"`
-	Expiry        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	Expiry        string                 `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	BasePrice     float64                `protobuf:"fixed64,4,opt,name=base_price,json=basePrice,proto3" json:"base_price,omitempty"`
 	Weight        float64                `protobuf:"fixed64,5,opt,name=weight,proto3" json:"weight,omitempty"`
 	Packaging     string                 `protobuf:"bytes,6,opt,name=packaging,proto3" json:"packaging,omitempty"`
-	StoredAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=stored_at,json=storedAt,proto3" json:"stored_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -928,11 +926,11 @@ func (x *Order) GetRecipientId() string {
 	return ""
 }
 
-func (x *Order) GetExpiry() *timestamppb.Timestamp {
+func (x *Order) GetExpiry() string {
 	if x != nil {
 		return x.Expiry
 	}
-	return nil
+	return ""
 }
 
 func (x *Order) GetBasePrice() float64 {
@@ -954,13 +952,6 @@ func (x *Order) GetPackaging() string {
 		return x.Packaging
 	}
 	return ""
-}
-
-func (x *Order) GetStoredAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.StoredAt
-	}
-	return nil
 }
 
 type SignupRequest struct {
@@ -1167,11 +1158,11 @@ var File_api_proto protoreflect.FileDescriptor
 
 const file_api_proto_rawDesc = "" +
 	"\n" +
-	"\tapi.proto\x12\x0etransport.grpc\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd0\x01\n" +
+	"\tapi.proto\x12\x0etransport.grpc\x1a\x1bgoogle/protobuf/empty.proto\"\xb4\x01\n" +
 	"\x12AcceptOrderRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
-	"\frecipient_id\x18\x02 \x01(\tR\vrecipientId\x122\n" +
-	"\x06expiry\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x06expiry\x12\x1d\n" +
+	"\frecipient_id\x18\x02 \x01(\tR\vrecipientId\x12\x16\n" +
+	"\x06expiry\x18\x03 \x01(\tR\x06expiry\x12\x1d\n" +
 	"\n" +
 	"base_price\x18\x04 \x01(\x01R\tbasePrice\x12\x16\n" +
 	"\x06weight\x18\x05 \x01(\x01R\x06weight\x12\x1c\n" +
@@ -1205,10 +1196,10 @@ const file_api_proto_rawDesc = "" +
 	"\x19GetRefundedOrdersResponse\x12-\n" +
 	"\x06orders\x18\x01 \x03(\v2\x15.transport.grpc.OrderR\x06orders\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +
-	"nextCursor\"\x97\x01\n" +
+	"nextCursor\"{\n" +
 	"\x16GetOrderHistoryRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12J\n" +
-	"\x13last_updated_cursor\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11lastUpdatedCursor\x12\x1b\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12.\n" +
+	"\x13last_updated_cursor\x18\x02 \x01(\tR\x11lastUpdatedCursor\x12\x1b\n" +
 	"\tid_cursor\x18\x03 \x01(\x05R\bidCursor\"i\n" +
 	"\x17GetOrderHistoryResponse\x12-\n" +
 	"\x06orders\x18\x01 \x03(\v2\x15.transport.grpc.OrderR\x06orders\x12\x1f\n" +
@@ -1221,16 +1212,15 @@ const file_api_proto_rawDesc = "" +
 	"\x1aGetAllActiveOrdersResponse\x12-\n" +
 	"\x06orders\x18\x01 \x03(\v2\x15.transport.grpc.OrderR\x06orders\"J\n" +
 	"\x19GetOrderHistoryV2Response\x12-\n" +
-	"\x06orders\x18\x01 \x03(\v2\x15.transport.grpc.OrderR\x06orders\"\xfc\x01\n" +
+	"\x06orders\x18\x01 \x03(\v2\x15.transport.grpc.OrderR\x06orders\"\xa7\x01\n" +
 	"\x05Order\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
-	"\frecipient_id\x18\x02 \x01(\tR\vrecipientId\x122\n" +
-	"\x06expiry\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x06expiry\x12\x1d\n" +
+	"\frecipient_id\x18\x02 \x01(\tR\vrecipientId\x12\x16\n" +
+	"\x06expiry\x18\x03 \x01(\tR\x06expiry\x12\x1d\n" +
 	"\n" +
 	"base_price\x18\x04 \x01(\x01R\tbasePrice\x12\x16\n" +
 	"\x06weight\x18\x05 \x01(\x01R\x06weight\x12\x1c\n" +
-	"\tpackaging\x18\x06 \x01(\tR\tpackaging\x127\n" +
-	"\tstored_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\bstoredAt\"A\n" +
+	"\tpackaging\x18\x06 \x01(\tR\tpackaging\"A\n" +
 	"\rSignupRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"*\n" +
@@ -1291,47 +1281,42 @@ var file_api_proto_goTypes = []any{
 	(*SignupResponse)(nil),              // 18: transport.grpc.SignupResponse
 	(*LoginRequest)(nil),                // 19: transport.grpc.LoginRequest
 	(*LoginResponse)(nil),               // 20: transport.grpc.LoginResponse
-	(*timestamppb.Timestamp)(nil),       // 21: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 22: google.protobuf.Empty
+	(*emptypb.Empty)(nil),               // 21: google.protobuf.Empty
 }
 var file_api_proto_depIdxs = []int32{
-	21, // 0: transport.grpc.AcceptOrderRequest.expiry:type_name -> google.protobuf.Timestamp
-	16, // 1: transport.grpc.GetUserOrdersResponse.orders:type_name -> transport.grpc.Order
-	16, // 2: transport.grpc.GetRefundedOrdersResponse.orders:type_name -> transport.grpc.Order
-	21, // 3: transport.grpc.GetOrderHistoryRequest.last_updated_cursor:type_name -> google.protobuf.Timestamp
-	16, // 4: transport.grpc.GetOrderHistoryResponse.orders:type_name -> transport.grpc.Order
-	16, // 5: transport.grpc.GetUserActiveOrdersResponse.orders:type_name -> transport.grpc.Order
-	16, // 6: transport.grpc.GetAllActiveOrdersResponse.orders:type_name -> transport.grpc.Order
-	16, // 7: transport.grpc.GetOrderHistoryV2Response.orders:type_name -> transport.grpc.Order
-	21, // 8: transport.grpc.Order.expiry:type_name -> google.protobuf.Timestamp
-	21, // 9: transport.grpc.Order.stored_at:type_name -> google.protobuf.Timestamp
-	0,  // 10: transport.grpc.OrderHandler.AcceptOrder:input_type -> transport.grpc.AcceptOrderRequest
-	2,  // 11: transport.grpc.OrderHandler.ReturnOrder:input_type -> transport.grpc.ReturnOrderRequest
-	4,  // 12: transport.grpc.OrderHandler.IssueRefundOrders:input_type -> transport.grpc.IssueRefundRequest
-	6,  // 13: transport.grpc.OrderHandler.GetUserOrders:input_type -> transport.grpc.GetUserOrdersRequest
-	8,  // 14: transport.grpc.OrderHandler.GetRefundedOrders:input_type -> transport.grpc.GetRefundedOrdersRequest
-	10, // 15: transport.grpc.OrderHandler.GetOrderHistory:input_type -> transport.grpc.GetOrderHistoryRequest
-	12, // 16: transport.grpc.OrderHandler.GetUserActiveOrders:input_type -> transport.grpc.GetUserActiveOrdersRequest
-	22, // 17: transport.grpc.OrderHandler.GetAllActiveOrders:input_type -> google.protobuf.Empty
-	22, // 18: transport.grpc.OrderHandler.GetOrderHistoryV2:input_type -> google.protobuf.Empty
-	17, // 19: transport.grpc.AuthHandler.Signup:input_type -> transport.grpc.SignupRequest
-	19, // 20: transport.grpc.AuthHandler.Login:input_type -> transport.grpc.LoginRequest
-	1,  // 21: transport.grpc.OrderHandler.AcceptOrder:output_type -> transport.grpc.AcceptOrderResponse
-	3,  // 22: transport.grpc.OrderHandler.ReturnOrder:output_type -> transport.grpc.ReturnOrderResponse
-	5,  // 23: transport.grpc.OrderHandler.IssueRefundOrders:output_type -> transport.grpc.IssueRefundResponse
-	7,  // 24: transport.grpc.OrderHandler.GetUserOrders:output_type -> transport.grpc.GetUserOrdersResponse
-	9,  // 25: transport.grpc.OrderHandler.GetRefundedOrders:output_type -> transport.grpc.GetRefundedOrdersResponse
-	11, // 26: transport.grpc.OrderHandler.GetOrderHistory:output_type -> transport.grpc.GetOrderHistoryResponse
-	13, // 27: transport.grpc.OrderHandler.GetUserActiveOrders:output_type -> transport.grpc.GetUserActiveOrdersResponse
-	14, // 28: transport.grpc.OrderHandler.GetAllActiveOrders:output_type -> transport.grpc.GetAllActiveOrdersResponse
-	15, // 29: transport.grpc.OrderHandler.GetOrderHistoryV2:output_type -> transport.grpc.GetOrderHistoryV2Response
-	18, // 30: transport.grpc.AuthHandler.Signup:output_type -> transport.grpc.SignupResponse
-	20, // 31: transport.grpc.AuthHandler.Login:output_type -> transport.grpc.LoginResponse
-	21, // [21:32] is the sub-list for method output_type
-	10, // [10:21] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	16, // 0: transport.grpc.GetUserOrdersResponse.orders:type_name -> transport.grpc.Order
+	16, // 1: transport.grpc.GetRefundedOrdersResponse.orders:type_name -> transport.grpc.Order
+	16, // 2: transport.grpc.GetOrderHistoryResponse.orders:type_name -> transport.grpc.Order
+	16, // 3: transport.grpc.GetUserActiveOrdersResponse.orders:type_name -> transport.grpc.Order
+	16, // 4: transport.grpc.GetAllActiveOrdersResponse.orders:type_name -> transport.grpc.Order
+	16, // 5: transport.grpc.GetOrderHistoryV2Response.orders:type_name -> transport.grpc.Order
+	0,  // 6: transport.grpc.OrderHandler.AcceptOrder:input_type -> transport.grpc.AcceptOrderRequest
+	2,  // 7: transport.grpc.OrderHandler.ReturnOrder:input_type -> transport.grpc.ReturnOrderRequest
+	4,  // 8: transport.grpc.OrderHandler.IssueRefundOrders:input_type -> transport.grpc.IssueRefundRequest
+	6,  // 9: transport.grpc.OrderHandler.GetUserOrders:input_type -> transport.grpc.GetUserOrdersRequest
+	8,  // 10: transport.grpc.OrderHandler.GetRefundedOrders:input_type -> transport.grpc.GetRefundedOrdersRequest
+	10, // 11: transport.grpc.OrderHandler.GetOrderHistory:input_type -> transport.grpc.GetOrderHistoryRequest
+	12, // 12: transport.grpc.OrderHandler.GetUserActiveOrders:input_type -> transport.grpc.GetUserActiveOrdersRequest
+	21, // 13: transport.grpc.OrderHandler.GetAllActiveOrders:input_type -> google.protobuf.Empty
+	21, // 14: transport.grpc.OrderHandler.GetOrderHistoryV2:input_type -> google.protobuf.Empty
+	17, // 15: transport.grpc.AuthHandler.Signup:input_type -> transport.grpc.SignupRequest
+	19, // 16: transport.grpc.AuthHandler.Login:input_type -> transport.grpc.LoginRequest
+	1,  // 17: transport.grpc.OrderHandler.AcceptOrder:output_type -> transport.grpc.AcceptOrderResponse
+	3,  // 18: transport.grpc.OrderHandler.ReturnOrder:output_type -> transport.grpc.ReturnOrderResponse
+	5,  // 19: transport.grpc.OrderHandler.IssueRefundOrders:output_type -> transport.grpc.IssueRefundResponse
+	7,  // 20: transport.grpc.OrderHandler.GetUserOrders:output_type -> transport.grpc.GetUserOrdersResponse
+	9,  // 21: transport.grpc.OrderHandler.GetRefundedOrders:output_type -> transport.grpc.GetRefundedOrdersResponse
+	11, // 22: transport.grpc.OrderHandler.GetOrderHistory:output_type -> transport.grpc.GetOrderHistoryResponse
+	13, // 23: transport.grpc.OrderHandler.GetUserActiveOrders:output_type -> transport.grpc.GetUserActiveOrdersResponse
+	14, // 24: transport.grpc.OrderHandler.GetAllActiveOrders:output_type -> transport.grpc.GetAllActiveOrdersResponse
+	15, // 25: transport.grpc.OrderHandler.GetOrderHistoryV2:output_type -> transport.grpc.GetOrderHistoryV2Response
+	18, // 26: transport.grpc.AuthHandler.Signup:output_type -> transport.grpc.SignupResponse
+	20, // 27: transport.grpc.AuthHandler.Login:output_type -> transport.grpc.LoginResponse
+	17, // [17:28] is the sub-list for method output_type
+	6,  // [6:17] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_init() }

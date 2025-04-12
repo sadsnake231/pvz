@@ -23,7 +23,6 @@ func NewServer(
 	auditPipeline *audit.Pipeline,
 	logger *zap.SugaredLogger,
 ) *Server {
-	// Создаем цепочку интерцепторов
 	interceptors := grpc.ChainUnaryInterceptor(
 		interceptor.MetricsInterceptor,
 		interceptor.AuthInterceptor,
@@ -32,7 +31,6 @@ func NewServer(
 
 	grpcServer := grpc.NewServer(interceptors)
 
-	// Регистрируем хендлеры
 	orderHandler := handler.NewOrderHandler(orderService, auditPipeline)
 	authHandler := handler.NewAuthHandler(authService, logger)
 

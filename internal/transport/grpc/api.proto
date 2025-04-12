@@ -3,7 +3,6 @@ syntax = "proto3";
 package transport.grpc;
 option go_package = "gitlab.ozon.dev/sadsnake231/homework/internal/transport/grpc/gen;grpcapi";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 service OrderHandler {
@@ -31,7 +30,7 @@ service AuthHandler {
 message AcceptOrderRequest {
   string id = 1;
   string recipient_id = 2;
-  google.protobuf.Timestamp expiry = 3;
+  string expiry = 3;
   double base_price = 4;
   double weight = 5;
   string packaging = 6;
@@ -85,7 +84,7 @@ message GetRefundedOrdersResponse {
 
 message GetOrderHistoryRequest {
   int32 limit = 1;
-  google.protobuf.Timestamp last_updated_cursor = 2;
+  string last_updated_cursor = 2;
   int32 id_cursor = 3;
 }
 
@@ -113,11 +112,10 @@ message GetOrderHistoryV2Response {
 message Order {
   string id = 1;
   string recipient_id = 2;
-  google.protobuf.Timestamp expiry = 3;
+  string expiry = 3;
   double base_price = 4;
   double weight = 5;
   string packaging = 6;
-  google.protobuf.Timestamp stored_at = 7;
 }
 
 message SignupRequest {

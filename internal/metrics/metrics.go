@@ -79,6 +79,60 @@ var (
 		Name: "kafka_consumer_errors_total",
 		Help: "Total processing errors",
 	})
+
+	RequestCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "api_requests_total",
+			Help: "Total number of API requests",
+		},
+		[]string{"method", "status"},
+	)
+
+	RequestsInFlight = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "api_requests_in_flight",
+			Help: "Current number of requests being processed",
+		},
+		[]string{"method"},
+	)
+
+	OrderValueDistribution = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "order_value",
+			Help:    "Order value distribution",
+			Buckets: []float64{100, 500, 1000, 3000, 5000, 10000},
+		},
+	)
+
+	OrderWeightDistribution = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "order_weight_kg",
+			Help:    "Order weight distribution",
+			Buckets: []float64{0.1, 0.5, 1, 2, 5, 10},
+		},
+	)
+
+	OrderReturns = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "order_returns_total",
+			Help: "Number of returned orders",
+		},
+	)
+
+	OrdersByStatus = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "orders_by_status",
+			Help: "Current number of orders by status",
+		},
+		[]string{"status"},
+	)
+
+	FailedOrderCount = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "failed_order_count",
+			Help: "Total number of not accepted orders",
+		},
+	)
 )
 
 func RegisterMetrics() error {
@@ -93,6 +147,13 @@ func RegisterMetrics() error {
 		APIResponseTime,
 		KafkaMessages,
 		KafkaErrors,
+		RequestCount,
+		RequestsInFlight,
+		OrderValueDistribution,
+		OrderWeightDistribution,
+		OrderReturns,
+		OrdersByStatus,
+		FailedOrderCount,
 	}
 
 	for _, collector := range collectors {

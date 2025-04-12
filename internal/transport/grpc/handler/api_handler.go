@@ -10,12 +10,12 @@ import (
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/metrics"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
 	grpcapi "gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type OrderHandler struct {
@@ -29,9 +29,10 @@ func NewOrderHandler(service service.OrderService, pipeline *audit.Pipeline) *Or
 }
 
 func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrderRequest) (*grpcapi.AcceptOrderResponse, error) {
-	expiry := req.GetExpiry().AsTime()
-	if expiry.IsZero() {
-		return nil, status.Error(codes.InvalidArgument, "expiry is required")
+	expiry, err := time.Parse("2006-1-02", req.GetExpiry())
+	if err != nil {
+		metrics.FailedOrderCount.Inc()
+		return nil, status.Errorf(codes.InvalidArgument, "invalid expiry format: %v", err)
 	}
 
 	storedAt := time.Now().UTC()
@@ -46,6 +47,7 @@ func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrder
 	}
 
 	if err := h.service.AcceptOrder(ctx, order); err != nil {
+		metrics.FailedOrderCount.Inc()
 		return nil, convertOrderError(err)
 	}
 
@@ -53,6 +55,10 @@ func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrder
 		"order_id": req.GetId(),
 		"status":   domain.StatusStored,
 	})
+
+	metrics.OrderValueDistribution.Observe(req.GetBasePrice())
+	metrics.OrderWeightDistribution.Observe(req.GetWeight())
+	metrics.OrdersByStatus.WithLabelValues("stored").Inc()
 
 	return &grpcapi.AcceptOrderResponse{Message: "заказ принят"}, nil
 }
@@ -70,6 +76,10 @@ func (h *OrderHandler) ReturnOrder(ctx context.Context, req *grpcapi.ReturnOrder
 		"order_id": req.GetId(),
 		"status":   "Deleted",
 	})
+
+	metrics.OrderReturns.Inc()
+	metrics.OrdersByStatus.WithLabelValues("stored").Dec()
+	metrics.OrdersByStatus.WithLabelValues("refunded").Dec()
 
 	return &grpcapi.ReturnOrderResponse{Message: "заказ удален"}, nil
 }
@@ -101,6 +111,15 @@ func (h *OrderHandler) IssueRefundOrders(ctx context.Context, req *grpcapi.Issue
 			"order_id": id,
 			"status":   orderStatus,
 		})
+
+		switch orderStatus {
+		case "issue":
+			metrics.OrdersByStatus.WithLabelValues("stored").Dec()
+			metrics.OrdersByStatus.WithLabelValues("issued").Inc()
+		case "refund":
+			metrics.OrdersByStatus.WithLabelValues("issued").Dec()
+			metrics.OrdersByStatus.WithLabelValues("refunded").Inc()
+		}
 	}
 
 	return &grpcapi.IssueRefundResponse{
@@ -110,7 +129,6 @@ func (h *OrderHandler) IssueRefundOrders(ctx context.Context, req *grpcapi.Issue
 	}, nil
 }
 
-// Остальные методы для отчетов
 func (h *OrderHandler) GetUserOrders(ctx context.Context, req *grpcapi.GetUserOrdersRequest) (*grpcapi.GetUserOrdersResponse, error) {
 	var cursorInt *int
 	if cursor := req.GetCursor(); cursor != "" {
@@ -176,7 +194,10 @@ func (h *OrderHandler) GetOrderHistory(
 	ctx context.Context,
 	req *grpcapi.GetOrderHistoryRequest,
 ) (*grpcapi.GetOrderHistoryResponse, error) {
-	lastUpdatedCursor := req.GetLastUpdatedCursor().AsTime()
+	lastUpdatedCursor, err := time.Parse(time.RFC3339, req.GetLastUpdatedCursor())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid last updated cursor format: %v", err)
+	}
 	idCursor := int(req.GetIdCursor())
 
 	orders, nextCursor, err := h.service.GetOrderHistory(
@@ -250,26 +271,19 @@ func (h *OrderHandler) GetOrderHistoryV2(
 		return nil, convertOrderError(err)
 	}
 
-	return &grpcapi.GetOrderHistoryV2Response{
-		Orders: convertOrdersToPB(orders),
-	}, nil
+	return &grpcapi.GetOrderHistoryV2Response{Orders: convertOrdersToPB(orders)}, nil
 }
 
-// Вспомогательные функции
 func convertOrdersToPB(orders []domain.Order) []*grpcapi.Order {
 	pbOrders := make([]*grpcapi.Order, 0, len(orders))
 	for _, o := range orders {
 		pbOrder := &grpcapi.Order{
 			Id:          o.ID,
 			RecipientId: o.RecipientID,
-			Expiry:      timestamppb.New(o.Expiry),
+			Expiry:      o.Expiry.Format(time.RFC3339),
 			BasePrice:   o.BasePrice,
 			Weight:      o.Weight,
 			Packaging:   string(o.Packaging),
-		}
-
-		if o.StoredAt != nil {
-			pbOrder.StoredAt = timestamppb.New(*o.StoredAt)
 		}
 
 		pbOrders = append(pbOrders, pbOrder)
