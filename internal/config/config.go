@@ -17,6 +17,7 @@ type Config struct {
 	KafkaBrokers       []string
 	KafkaConsumerGroup string
 	KafkaTopic         string
+	GRPCPort           string
 }
 
 func Load() *Config {
@@ -33,6 +34,7 @@ func Load() *Config {
 		KafkaBrokers:       strings.Split(getEnv("KAFKA_BROKERS", ""), ","),
 		KafkaConsumerGroup: getEnv("KAFKA_CONSUMER_GROUP", ""),
 		KafkaTopic:         getEnv("KAFKA_TOPIC", ""),
+		GRPCPort:           getEnv("GRPC_PORT", ":8000"),
 	}
 }
 

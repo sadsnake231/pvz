@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, auditHandler *api.AuditHandler, logger *zap.SugaredLogger, auditPipeline *audit.Pipeline) *gin.Engine {
+func SetupRouter(apiHandler *api.APIHandler, authHandler *api.AuthHandler, logger *zap.SugaredLogger, auditPipeline *audit.Pipeline) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware.AuditMiddleware(auditPipeline))

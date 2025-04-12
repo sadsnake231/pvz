@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package transport.grpc;
+option go_package = "gitlab.ozon.dev/sadsnake231/homework/internal/transport/grpc/gen;grpcapi";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service OrderHandler {
+  // Orders
+  rpc AcceptOrder(AcceptOrderRequest) returns (AcceptOrderResponse);
+  rpc ReturnOrder(ReturnOrderRequest) returns (ReturnOrderResponse);
+  
+  // Actions
+  rpc IssueRefundOrders(IssueRefundRequest) returns (IssueRefundResponse);
+  
+  // Reports
+  rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
+  rpc GetRefundedOrders(GetRefundedOrdersRequest) returns (GetRefundedOrdersResponse);
+  rpc GetOrderHistory(GetOrderHistoryRequest) returns (GetOrderHistoryResponse);
+  rpc GetUserActiveOrders(GetUserActiveOrdersRequest) returns (GetUserActiveOrdersResponse);
+  rpc GetAllActiveOrders(google.protobuf.Empty) returns (GetAllActiveOrdersResponse);
+  rpc GetOrderHistoryV2(google.protobuf.Empty) returns (GetOrderHistoryV2Response);
+}
+
+service AuthHandler {
+  rpc Signup(SignupRequest) returns (SignupResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message AcceptOrderRequest {
+  string id = 1;
+  string recipient_id = 2;
+  google.protobuf.Timestamp expiry = 3;
+  double base_price = 4;
+  double weight = 5;
+  string packaging = 6;
+}
+
+message AcceptOrderResponse {
+  string message = 1;
+}
+
+message ReturnOrderRequest {
+  string id = 1;
+}
+
+message ReturnOrderResponse {
+  string message = 1;
+}
+
+message IssueRefundRequest {
+  string command = 1;
+  string user_id = 2;
+  repeated string order_ids = 3;
+}
+
+message IssueRefundResponse {
+  repeated string processed_order_ids = 1;
+  repeated string failed_order_ids = 2;
+  string error = 3;
+}
+
+message GetUserOrdersRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  string cursor = 3;
+  string status = 4;
+}
+
+message GetUserOrdersResponse {
+  repeated Order orders = 1;
+  string next_cursor = 2;
+}
+
+message GetRefundedOrdersRequest {
+  int32 limit = 1;
+  string cursor = 2;
+}
+
+message GetRefundedOrdersResponse {
+  repeated Order orders = 1;
+  string next_cursor = 2;
+}
+
+message GetOrderHistoryRequest {
+  int32 limit = 1;
+  google.protobuf.Timestamp last_updated_cursor = 2;
+  int32 id_cursor = 3;
+}
+
+message GetOrderHistoryResponse {
+  repeated Order orders = 1;
+  string next_cursor = 2;
+}
+
+message GetUserActiveOrdersRequest {
+  string user_id = 1;
+}
+
+message GetUserActiveOrdersResponse {
+  repeated Order orders = 1;
+}
+
+message GetAllActiveOrdersResponse {
+  repeated Order orders = 1;
+}
+
+message GetOrderHistoryV2Response {
+  repeated Order orders = 1;
+}
+
+message Order {
+  string id = 1;
+  string recipient_id = 2;
+  google.protobuf.Timestamp expiry = 3;
+  double base_price = 4;
+  double weight = 5;
+  string packaging = 6;
+  google.protobuf.Timestamp stored_at = 7;
+}
+
+message SignupRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SignupResponse {
+  string message = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string message = 1;
+  string token = 2;
+}

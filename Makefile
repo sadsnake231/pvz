@@ -64,7 +64,14 @@ test-load:
 migrate:
 	goose -dir ./migrations postgres $(POSTGRES_URL) up
 
-
+generate-proto:
+	protoc \
+		--go_out=./internal/transport/grpc/gen \
+		--go-grpc_out=./internal/transport/grpc/gen \
+		--go_opt=paths=source_relative \
+		--go-grpc_opt=paths=source_relative \
+		--proto_path=./internal/transport/grpc \
+		./internal/transport/grpc/api.proto
 help:
 	@echo "Доступные команды:"
 	@echo "  make build         		- Собрать приложение"

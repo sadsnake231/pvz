@@ -26,6 +26,7 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/orderstorage"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/reportorderstorage"
 	userorder "gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/userorderstorage"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc"
 	"go.uber.org/zap"
 )
 
@@ -78,18 +79,16 @@ func main() {
 
 	apiHandler := api.NewAPIHandler(orderService, auditPipeline)
 	authHandler := api.NewAuthHandler(authService, logger)
-	auditHandler := api.NewAuditHandler(auditService)
 
 	kafkaProducer, err := kafka.NewProducer(cfg.KafkaBrokers, logger)
 	if err != nil {
 		logger.Fatalw("Kafka Producer не запустился", "error", err)
 	}
 
-	outboxWorker := audit.NewOutboxWorker(auditService, kafkaProducer, logger)
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
+	outboxWorker := audit.NewOutboxWorker(auditService, kafkaProducer, logger)
 	go outboxWorker.Run(ctx)
 
 	auditPipeline.StartWorkers(ctx, filterFunc)
@@ -97,22 +96,30 @@ func main() {
 	orderService.InitCache(ctx)
 	go orderService.CacheRefresh(ctx)
 
-	router := router.SetupRouter(apiHandler, authHandler, auditHandler, logger, auditPipeline)
+	router := router.SetupRouter(apiHandler, authHandler, logger, auditPipeline)
 	router.Use(middleware.AuditMiddleware(auditPipeline))
 
-	serverErr := make(chan error, 1)
 	go func() {
-		serverErr <- router.Run(cfg.HTTPPort)
+		router.Run(cfg.HTTPPort)
 	}()
 
-	select {
-	case <-ctx.Done():
-		logger.Info("Получен сигнал завершения, выключаем сервер...")
-	case err := <-serverErr:
-		logger.Fatal("Ошибка работы сервера", zap.Error(err))
-	}
+	grpcServer := grpc.NewServer(
+		orderService,
+		authService,
+		auditPipeline,
+		logger,
+	)
 
-	stop()
+	go func() {
+		logger.Info("Starting gRPC server", zap.String("port", cfg.GRPCPort))
+		if err := grpcServer.Run(cfg.GRPCPort); err != nil {
+			logger.Error("gRPC server failed to start", zap.Error(err))
+		}
+	}()
+
+	<-ctx.Done()
+	grpcServer.Stop()
+
 	logger.Info("Ожидание завершения работы логгера...")
 
 	logger.Info("Выключение завершено")
