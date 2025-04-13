@@ -18,6 +18,8 @@ type Config struct {
 	KafkaConsumerGroup string
 	KafkaTopic         string
 	GRPCPort           string
+	JaegerServiceName  string
+	JaegerURL          string
 }
 
 func Load() *Config {
@@ -35,6 +37,8 @@ func Load() *Config {
 		KafkaConsumerGroup: getEnv("KAFKA_CONSUMER_GROUP", ""),
 		KafkaTopic:         getEnv("KAFKA_TOPIC", ""),
 		GRPCPort:           getEnv("GRPC_PORT", ":8000"),
+		JaegerServiceName:  getEnv("JAEGER_SERVICE_NAME", ""),
+		JaegerURL:          getEnv("JAEGER_URL", ""),
 	}
 }
 

@@ -72,6 +72,9 @@ generate-proto:
 		--go-grpc_opt=paths=source_relative \
 		--proto_path=./internal/transport/grpc \
 		./internal/transport/grpc/api.proto
+gen-docs:
+	protoc --doc_out=./docs --doc_opt=html,grpc-api.html \
+  	-I. ./internal/transport/grpc/api.proto
 help:
 	@echo "Доступные команды:"
 	@echo "  make build         		- Собрать приложение"
@@ -87,3 +90,6 @@ help:
 	@echo "  make test-load             - Нагрузочный тест"
 	@echo "  make help          		- Показать эту справку"
 	@echo "  make migrate				- Накатить миграции для тестовой БД"
+	@echo "  make generate-proto        - Генерация файлов gRPC"
+	@echo "  make gen-docs              - Генерация документации"
+

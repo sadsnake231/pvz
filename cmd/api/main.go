@@ -26,6 +26,7 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/orderstorage"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/reportorderstorage"
 	userorder "gitlab.ozon.dev/sadsnake2311/homework/internal/storage/postgres/userorderstorage"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/tracing"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc"
 	"go.uber.org/zap"
 )
@@ -39,6 +40,16 @@ func main() {
 		log.Fatalf("Ошибка старта логгера: %v", err)
 	}
 	defer logger.Sync()
+
+	tp, err := tracing.InitTracer(cfg.JaegerServiceName, cfg.JaegerURL)
+	if err != nil {
+		logger.Fatalf("Failed to init tracer: %v", err)
+	}
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			logger.Errorf("Error shutting down tracer: %v", err)
+		}
+	}()
 
 	db, err := database.NewDatabase(cfg.DatabaseURL)
 	if err != nil {

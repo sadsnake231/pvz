@@ -2,8 +2,10 @@ package cache
 
 import (
 	"context"
+	"log"
 	"sync"
 
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 )
@@ -19,6 +21,10 @@ func GetRedisClient(addr, password string) *redis.Client {
 			Addr:     addr,
 			Password: password,
 		})
+
+		if err := redisotel.InstrumentTracing(redisClient); err != nil {
+			log.Printf("failed to trace redis: %v", err)
+		}
 	})
 	return redisClient
 }

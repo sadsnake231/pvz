@@ -8,6 +8,7 @@ import (
 	grpcapi "gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/handler"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/interceptor"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -27,6 +28,7 @@ func NewServer(
 		interceptor.MetricsInterceptor,
 		interceptor.AuthInterceptor,
 		interceptor.AuditInterceptor(auditPipeline),
+		otelgrpc.UnaryServerInterceptor(),
 	)
 
 	grpcServer := grpc.NewServer(interceptors)
