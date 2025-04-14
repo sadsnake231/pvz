@@ -24,7 +24,7 @@ func NewAuthHandler(service service.AuthService, logger *zap.SugaredLogger) *Aut
 
 func (h *AuthHandler) Signup(ctx context.Context, req *grpcapi.SignupRequest) (*grpcapi.SignupResponse, error) {
 	if req.GetEmail() == "" || req.GetPassword() == "" {
-		return nil, status.Error(codes.InvalidArgument, "email and password are required")
+		return nil, status.Error(codes.InvalidArgument, "нужно указать email и пароль")
 	}
 
 	user := domain.User{
@@ -51,7 +51,7 @@ func (h *AuthHandler) Login(ctx context.Context, req *grpcapi.LoginRequest) (*gr
 
 	token, err := h.service.GenerateToken(user.Email)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to generate token")
+		return nil, status.Error(codes.Internal, "ошибка генерации токена")
 	}
 
 	return &grpcapi.LoginResponse{

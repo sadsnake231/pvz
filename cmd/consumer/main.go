@@ -14,7 +14,7 @@ import (
 func main() {
 	baseLogger, err := zap.NewProduction()
 	if err != nil {
-		log.Fatalf("Ошибка старта логгера: %v", err)
+		log.Fatalf("failed to init logger: %v", err)
 	}
 	logger := baseLogger.Sugar()
 	defer logger.Sync()
@@ -23,7 +23,7 @@ func main() {
 
 	kafkaConsumer, err := NewConsumer(cfg.KafkaBrokers, cfg.KafkaConsumerGroup, cfg.KafkaTopic, logger)
 	if err != nil {
-		logger.Fatalw("Kafka Consumer не запустился", "error", err)
+		logger.Fatalw("failed to init Kafka Consumer", "error", err)
 	}
 	defer kafkaConsumer.Close()
 
@@ -42,5 +42,5 @@ func main() {
 	}
 
 	kafkaConsumer.Wait()
-	logger.Info("Consumer завершил работу")
+	logger.Info("consumer shutdown")
 }

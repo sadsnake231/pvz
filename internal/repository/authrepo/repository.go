@@ -26,7 +26,7 @@ func (r *AuthRepository) Register(ctx context.Context, user *domain.User) error 
 
 	exists, err := r.storage.GetUserByEmail(ctx, user.Email)
 	if err != nil && !errors.Is(err, domain.ErrInvalidCredentials) {
-		r.logger.Error("ошибка при поиске пользователя в базе данных", zap.Error(err))
+		r.logger.Error("failed to find the user in DB", zap.Error(err))
 		return domain.ErrDatabase
 	}
 
@@ -36,13 +36,13 @@ func (r *AuthRepository) Register(ctx context.Context, user *domain.User) error 
 
 	user.Password, err = hashPassword(user.Password)
 	if err != nil {
-		r.logger.Error("ошибка криптографии", zap.Error(err))
+		r.logger.Error("cryptography error", zap.Error(err))
 		return domain.ErrHashPassword
 	}
 
 	err = r.storage.CreateUser(ctx, user)
 	if err != nil {
-		r.logger.Error("ошибка сохранения пользователя в базе данных", zap.Error(err))
+		r.logger.Error("failed to save the user in DB", zap.Error(err))
 		return domain.ErrDatabase
 	}
 	return nil
@@ -51,7 +51,7 @@ func (r *AuthRepository) Register(ctx context.Context, user *domain.User) error 
 func (r *AuthRepository) Login(ctx context.Context, email, password string) error {
 	user, err := r.storage.GetUserByEmail(ctx, email)
 	if err != nil && !errors.Is(err, domain.ErrInvalidCredentials) {
-		r.logger.Error("ошибка при поиске пользователя в базе данных", zap.Error(err))
+		r.logger.Error("failed to find the user in DB", zap.Error(err))
 		return domain.ErrDatabase
 	}
 

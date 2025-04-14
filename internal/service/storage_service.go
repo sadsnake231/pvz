@@ -125,7 +125,7 @@ func (s *orderService) IssueOrders(ctx context.Context, userID string, orderIDs 
 	for _, orderID := range result.OrderIDs {
 		order, err := s.cache.GetOrder(ctx, orderID)
 		if err != nil {
-			s.logger.Errorf("Не смог получить заказ %s из кэша: %v", orderID, err)
+			s.logger.Errorf("failed to get order %s from cache: %v", orderID, err)
 			continue
 		}
 		if order == nil {
@@ -136,7 +136,7 @@ func (s *orderService) IssueOrders(ctx context.Context, userID string, orderIDs 
 		*order.IssuedAt = time.Now()
 
 		if err := s.cache.SetOrder(ctx, *order); err != nil {
-			s.logger.Errorf("Не смог обновить заказ %s в кэше: %v", order.ID, err)
+			s.logger.Errorf("failed to update order %s in cache: %v", order.ID, err)
 		}
 	}
 
@@ -155,10 +155,10 @@ func (s *orderService) RefundOrders(ctx context.Context, userID string, orderIDs
 
 	for _, orderID := range result.OrderIDs {
 		if err := s.cache.DeleteOrder(ctx, orderID); err != nil {
-			s.logger.Errorf("Не смог удалить заказ %s из кэша: %v", orderID, err)
+			s.logger.Errorf("failed to delete order %s from cache: %v", orderID, err)
 		}
 		if err := s.cache.RemoveFromHistory(ctx, orderID); err != nil {
-			s.logger.Errorf("Не смог удалить заказ %s из кэша: %v", orderID, err)
+			s.logger.Errorf("failed to delete order %s from cache: %v", orderID, err)
 		}
 	}
 
@@ -238,7 +238,7 @@ func (s *orderService) GetUserActiveOrders(ctx context.Context, userID string) (
 	orderIDs, err := s.cache.GetUserActiveOrders(ctx, userID)
 	if err != nil {
 		metrics.CacheOperations.WithLabelValues("GetHistoryIDs", "error").Inc()
-		s.logger.Errorf("Не смог получить заказы юзера %s из кэша: %v", userID, err)
+		s.logger.Errorf("failed to get the orders of user %s from cache: %v", userID, err)
 	} else {
 		metrics.CacheOperations.WithLabelValues("GetHistoryIDs", "success").Inc()
 	}
@@ -251,7 +251,7 @@ func (s *orderService) GetUserActiveOrders(ctx context.Context, userID string) (
 		}
 
 		if err := s.cache.UpdateUserActiveOrders(ctx, userID, orderIDs); err != nil {
-			s.logger.Errorf("Не смог обновить в кэше: %v", err)
+			s.logger.Errorf("failed to update in cache: %v", err)
 		}
 	} else {
 		metrics.CacheHits.WithLabelValues("history").Inc()
@@ -261,7 +261,7 @@ func (s *orderService) GetUserActiveOrders(ctx context.Context, userID string) (
 	for _, orderID := range orderIDs {
 		order, err := s.cache.GetOrder(ctx, orderID)
 		if err != nil {
-			s.logger.Errorf("Не смог получить заказ %s из кэша: %v", orderID, err)
+			s.logger.Errorf("failed to get order %s from cache: %v", orderID, err)
 			continue
 		}
 		if order == nil {
@@ -270,7 +270,7 @@ func (s *orderService) GetUserActiveOrders(ctx context.Context, userID string) (
 				continue
 			}
 			if err := s.cache.SetOrder(ctx, *order); err != nil {
-				s.logger.Errorf("Не смог закэшировать заказ %s: %v", order.ID, err)
+				s.logger.Errorf("failed to cache order %s: %v", order.ID, err)
 			}
 		}
 		orders = append(orders, *order)
@@ -288,7 +288,7 @@ func (s *orderService) GetAllActiveOrders(ctx context.Context) ([]domain.Order, 
 	orderIDs, err := s.cache.GetAllActiveOrderIDs(ctx)
 	if err != nil {
 		metrics.CacheOperations.WithLabelValues("GetHistoryIDs", "error").Inc()
-		s.logger.Errorf("Не смог получить заказы из кэша: %v", err)
+		s.logger.Errorf("failed to get the orders from cache: %v", err)
 	} else {
 		metrics.CacheOperations.WithLabelValues("GetHistoryIDs", "success").Inc()
 	}
@@ -301,7 +301,7 @@ func (s *orderService) GetAllActiveOrders(ctx context.Context) ([]domain.Order, 
 		}
 
 		if err := s.cache.UpdateAllActiveOrders(ctx, orderIDs); err != nil {
-			s.logger.Errorf("Не смог обновить в кэше: %v", err)
+			s.logger.Errorf("failed to update in cache: %v", err)
 		}
 	} else {
 		metrics.CacheHits.WithLabelValues("history").Inc()
@@ -311,7 +311,7 @@ func (s *orderService) GetAllActiveOrders(ctx context.Context) ([]domain.Order, 
 	for _, orderID := range orderIDs {
 		order, err := s.cache.GetOrder(ctx, orderID)
 		if err != nil {
-			s.logger.Errorf("Не смог получить заказ %s из кэша: %v", orderID, err)
+			s.logger.Errorf("failed to get order %s from cache: %v", orderID, err)
 			continue
 		}
 		if order == nil {
@@ -320,7 +320,7 @@ func (s *orderService) GetAllActiveOrders(ctx context.Context) ([]domain.Order, 
 				continue
 			}
 			if err := s.cache.SetOrder(ctx, *order); err != nil {
-				s.logger.Errorf("Не смог закэшировать заказ %s: %v", order.ID, err)
+				s.logger.Errorf("failed to cache order %s: %v", order.ID, err)
 			}
 		}
 		orders = append(orders, *order)
@@ -334,13 +334,13 @@ func (s *orderService) InitCache(ctx context.Context) {
 
 	if activeIDs, err := s.reportRepo.GetAllActiveOrderIDs(ctx); err == nil {
 		if err := s.cache.UpdateAllActiveOrders(ctx, activeIDs); err != nil {
-			s.logger.Errorf("не смог инициализировать кэш: %v", err)
+			s.logger.Errorf("failed to init the cache: %v", err)
 		}
 
 		if orders, err := s.orderRepo.FindOrdersByIDs(ctx, activeIDs); err == nil {
 			for _, order := range orders {
 				if err := s.cache.SetOrder(ctx, *order); err != nil {
-					s.logger.Errorf("не смог закэшить заказ %s: %v", order.ID, err)
+					s.logger.Errorf("failed to cache order %s: %v", order.ID, err)
 				}
 			}
 		}
@@ -348,13 +348,13 @@ func (s *orderService) InitCache(ctx context.Context) {
 
 	if historyIDs, err := s.reportRepo.GetHistoryOrderIDs(ctx); err == nil {
 		if err := s.cache.RefreshHistory(ctx); err != nil {
-			s.logger.Errorf("не смог инициализировать кэш: %v", err)
+			s.logger.Errorf("failed to init the cache: %v", err)
 		}
 
 		if orders, err := s.orderRepo.FindOrdersByIDs(ctx, historyIDs); err == nil {
 			for _, order := range orders {
 				if err := s.cache.SetOrder(ctx, *order); err != nil {
-					s.logger.Errorf("не смог инициализировать заказ %s: %v", order.ID, err)
+					s.logger.Errorf("failed to cache order %s: %v", order.ID, err)
 				}
 			}
 		}

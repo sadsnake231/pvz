@@ -58,7 +58,7 @@ func (w *Worker) Run(ctx context.Context) {
 func (w *Worker) processBatch(events []domain.Event) {
 	for _, event := range events {
 		if err := w.processFunc(event); err != nil {
-			w.logger.Errorw("Ошибка обработки события",
+			w.logger.Errorw("failed to process audit event",
 				"worker_type", w.workerType,
 				"error", err,
 			)

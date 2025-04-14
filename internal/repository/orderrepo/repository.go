@@ -37,7 +37,7 @@ func (r *orderRepository) AcceptOrder(ctx context.Context, order domain.Order) e
 
 	existing, err := r.orderStorage.FindOrderByID(ctx, order.ID)
 	if err != nil && !errors.Is(err, domain.ErrNotFoundOrder) {
-		r.logger.Error("Не удалось проверить существование заказа", zap.Error(err))
+		r.logger.Error("failed to find the order in DB", zap.Error(err))
 		return domain.ErrDatabase
 	}
 	if existing != nil {
@@ -59,7 +59,7 @@ func (r *orderRepository) AcceptOrder(ctx context.Context, order domain.Order) e
 
 	err = r.orderStorage.SaveOrder(ctx, order)
 	if err != nil {
-		r.logger.Error("Не удалось сохранить заказ", zap.Error(err))
+		r.logger.Error("failed to save the order in DB", zap.Error(err))
 		return domain.ErrDatabase
 	}
 	return nil
@@ -68,7 +68,7 @@ func (r *orderRepository) AcceptOrder(ctx context.Context, order domain.Order) e
 func (r *orderRepository) ReturnOrder(ctx context.Context, id string) error {
 	order, err := r.orderStorage.FindOrderByID(ctx, id)
 	if err != nil && !errors.Is(err, domain.ErrNotFoundOrder) {
-		r.logger.Error("Не удалось проверить существование заказа", zap.Error(err))
+		r.logger.Error("failed to find the order in DB", zap.Error(err))
 		return domain.ErrDatabase
 	}
 
@@ -81,7 +81,7 @@ func (r *orderRepository) ReturnOrder(ctx context.Context, id string) error {
 	}
 
 	if err := r.orderStorage.DeleteOrder(ctx, id); err != nil && !errors.Is(err, domain.ErrNotFoundOrder) {
-		r.logger.Error("Не удалось удалить заказ", zap.String("orderID", id), zap.Error(err))
+		r.logger.Error("failed to delete the order from DB", zap.String("orderID", id), zap.Error(err))
 		return domain.ErrDatabase
 	}
 

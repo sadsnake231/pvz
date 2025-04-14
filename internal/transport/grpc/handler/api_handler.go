@@ -32,7 +32,7 @@ func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrder
 	expiry, err := time.Parse("2006-1-02", req.GetExpiry())
 	if err != nil {
 		metrics.FailedOrderCount.Inc()
-		return nil, status.Errorf(codes.InvalidArgument, "invalid expiry format: %v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "неправильный формат времени: %v", err)
 	}
 
 	storedAt := time.Now().UTC()
@@ -65,7 +65,7 @@ func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrder
 
 func (h *OrderHandler) ReturnOrder(ctx context.Context, req *grpcapi.ReturnOrderRequest) (*grpcapi.ReturnOrderResponse, error) {
 	if req.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "order id is required")
+		return nil, status.Error(codes.InvalidArgument, "нужно указать order id")
 	}
 
 	if err := h.service.ReturnOrder(ctx, req.GetId()); err != nil {
@@ -99,7 +99,7 @@ func (h *OrderHandler) IssueRefundOrders(ctx context.Context, req *grpcapi.Issue
 		result, err = h.service.RefundOrders(ctx, req.GetUserId(), req.GetOrderIds())
 		orderStatus = domain.StatusRefunded
 	default:
-		return nil, status.Error(codes.InvalidArgument, "invalid command")
+		return nil, status.Error(codes.InvalidArgument, "неверная команда")
 	}
 
 	if err != nil {
@@ -134,7 +134,7 @@ func (h *OrderHandler) GetUserOrders(ctx context.Context, req *grpcapi.GetUserOr
 	if cursor := req.GetCursor(); cursor != "" {
 		val, err := strconv.Atoi(cursor)
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid cursor format")
+			return nil, status.Error(codes.InvalidArgument, "неверный формат курсора")
 		}
 		cursorInt = &val
 	}
@@ -167,7 +167,7 @@ func (h *OrderHandler) GetRefundedOrders(
 	if cursor := req.GetCursor(); cursor != "" {
 		val, err := strconv.Atoi(cursor)
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid cursor format")
+			return nil, status.Error(codes.InvalidArgument, "неверный формат курсора")
 		}
 		cursorInt = &val
 	}
@@ -196,7 +196,7 @@ func (h *OrderHandler) GetOrderHistory(
 ) (*grpcapi.GetOrderHistoryResponse, error) {
 	lastUpdatedCursor, err := time.Parse(time.RFC3339, req.GetLastUpdatedCursor())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid last updated cursor format: %v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "неверный формат курсора: %v", err)
 	}
 	idCursor := int(req.GetIdCursor())
 
@@ -235,7 +235,7 @@ func (h *OrderHandler) GetUserActiveOrders(
 	req *grpcapi.GetUserActiveOrdersRequest,
 ) (*grpcapi.GetUserActiveOrdersResponse, error) {
 	if req.GetUserId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+		return nil, status.Error(codes.InvalidArgument, "нужно указать user_id")
 	}
 
 	orders, err := h.service.GetUserActiveOrders(ctx, req.GetUserId())

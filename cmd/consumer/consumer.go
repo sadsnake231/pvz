@@ -29,17 +29,17 @@ func NewConsumer(brokers []string, groupID, topic string, logger *zap.SugaredLog
 		kgo.HeartbeatInterval(5 * time.Second),
 		kgo.OnPartitionsRevoked(func(ctx context.Context, client *kgo.Client, revoked map[string][]int32) {
 			if err := client.CommitUncommittedOffsets(ctx); err != nil {
-				logger.Errorw("Failed to commit offsets during rebalance", "error", err)
+				logger.Errorw("failed to commit offsets during rebalance", "error", err)
 			}
 		}),
 		kgo.OnPartitionsAssigned(func(ctx context.Context, client *kgo.Client, assigned map[string][]int32) {
-			logger.Infow("Partitions assigned", "partitions", assigned)
+			logger.Infow("partitions assigned", "partitions", assigned)
 		}),
 	}
 
 	client, err := kgo.NewClient(opts...)
 	if err != nil {
-		return nil, fmt.Errorf("не смог запустить клиент Kafka: %w", err)
+		return nil, fmt.Errorf("failed to init Kafka Client: %w", err)
 	}
 
 	return &Consumer{
@@ -54,7 +54,7 @@ func (c *Consumer) Start(ctx context.Context) {
 	go func() {
 		defer c.wg.Done()
 		if err := c.run(ctx); err != nil {
-			c.logger.Errorw("Kafka Consumer остановился", "error", err)
+			c.logger.Errorw("kafka consumer stopped", "error", err)
 		}
 	}()
 }
@@ -75,12 +75,12 @@ func (c *Consumer) run(ctx context.Context) error {
 		default:
 			fetches := c.client.PollFetches(ctx)
 			if fetches.IsClientClosed() {
-				return fmt.Errorf("клиент закрыт")
+				return fmt.Errorf("client is closed")
 			}
 
 			if errs := fetches.Errors(); len(errs) > 0 {
 				for _, err := range errs {
-					c.logger.Errorw("Fetch error",
+					c.logger.Errorw("fetch error",
 						"topic", err.Topic,
 						"partition", err.Partition,
 						"error", err.Err,
@@ -91,7 +91,7 @@ func (c *Consumer) run(ctx context.Context) error {
 
 			fetches.EachRecord(func(record *kgo.Record) {
 				if err := c.processRecord(record); err != nil {
-					c.logger.Errorw("Ошибка обработки записи",
+					c.logger.Errorw("record process error",
 						"topic", record.Topic,
 						"partition", record.Partition,
 						"offset", record.Offset,
@@ -103,7 +103,7 @@ func (c *Consumer) run(ctx context.Context) error {
 			})
 
 			if err := c.client.CommitUncommittedOffsets(ctx); err != nil {
-				c.logger.Errorw("Failed to commit offsets", "error", err)
+				c.logger.Errorw("failed to commit offsets", "error", err)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func (c *Consumer) run(ctx context.Context) error {
 func (c *Consumer) processRecord(record *kgo.Record) error {
 	defer func() {
 		if r := recover(); r != nil {
-			c.logger.Errorw("Паника при обработке записи",
+			c.logger.Errorw("panic while record processing",
 				"offset", record.Offset,
 				"recover", r,
 			)

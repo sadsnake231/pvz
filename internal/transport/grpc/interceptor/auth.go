@@ -20,12 +20,12 @@ func AuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, h
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, status.Error(codes.Unauthenticated, "metadata not provided")
+		return nil, status.Error(codes.Unauthenticated, "отсутствуют метаданные")
 	}
 
 	authHeader := md.Get("authorization")
 	if len(authHeader) == 0 {
-		return nil, status.Error(codes.Unauthenticated, "authorization header not provided")
+		return nil, status.Error(codes.Unauthenticated, "отсутствует заголовок авторизации")
 	}
 
 	tokenString := strings.TrimPrefix(authHeader[0], "Bearer ")
@@ -34,7 +34,7 @@ func AuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, h
 	})
 
 	if err != nil || !token.Valid {
-		return nil, status.Error(codes.Unauthenticated, "invalid token")
+		return nil, status.Error(codes.Unauthenticated, "неверный токен")
 	}
 
 	return handler(ctx, req)

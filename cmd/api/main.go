@@ -37,23 +37,23 @@ func main() {
 	baseLogger, err := zap.NewProduction()
 	logger := baseLogger.Sugar()
 	if err != nil {
-		log.Fatalf("Ошибка старта логгера: %v", err)
+		log.Fatalf("failed to init logger: %v", err)
 	}
 	defer logger.Sync()
 
 	tp, err := tracing.InitTracer(cfg.JaegerServiceName, cfg.JaegerURL)
 	if err != nil {
-		logger.Fatalf("Failed to init tracer: %v", err)
+		logger.Fatalf("failed to init tracer: %v", err)
 	}
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {
-			logger.Errorf("Error shutting down tracer: %v", err)
+			logger.Errorf("error shutting down tracer: %v", err)
 		}
 	}()
 
 	db, err := database.NewDatabase(cfg.DatabaseURL)
 	if err != nil {
-		logger.Fatal("Не удалось подключиться к базе данных", zap.Error(err))
+		logger.Fatal("failed to init database", zap.Error(err))
 	}
 	defer db.Close()
 
@@ -61,7 +61,7 @@ func main() {
 
 	err = metrics.RegisterMetrics()
 	if err != nil {
-		logger.Error("Не удалось зарегистрировать метрику", zap.Error(err))
+		logger.Error("failed to register metric", zap.Error(err))
 	}
 
 	orderStorage := orderstorage.NewOrderStorage(db)
@@ -93,7 +93,7 @@ func main() {
 
 	kafkaProducer, err := kafka.NewProducer(cfg.KafkaBrokers, logger)
 	if err != nil {
-		logger.Fatalw("Kafka Producer не запустился", "error", err)
+		logger.Fatalw("failed to init Kafka Producer", "error", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -122,16 +122,16 @@ func main() {
 	)
 
 	go func() {
-		logger.Info("Starting gRPC server", zap.String("port", cfg.GRPCPort))
+		logger.Info("starting gRPC server", zap.String("port", cfg.GRPCPort))
 		if err := grpcServer.Run(cfg.GRPCPort); err != nil {
-			logger.Error("gRPC server failed to start", zap.Error(err))
+			logger.Error("failed to start gRPC server", zap.Error(err))
 		}
 	}()
 
 	<-ctx.Done()
 	grpcServer.Stop()
 
-	logger.Info("Ожидание завершения работы логгера...")
+	logger.Info("waiting for logger to shut down...")
 
-	logger.Info("Выключение завершено")
+	logger.Info("shutdown complete")
 }

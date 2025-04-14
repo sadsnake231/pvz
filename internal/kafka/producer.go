@@ -43,7 +43,7 @@ func (p *Producer) SendTransactional(
 ) error {
 
 	if err := p.client.BeginTransaction(); err != nil {
-		p.logger.Errorw("Producer не начал транзакцию", "error", err)
+		p.logger.Errorw("producer failed to start a transaction", "error", err)
 		return err
 	}
 
@@ -56,12 +56,12 @@ func (p *Producer) SendTransactional(
 	result := p.client.ProduceSync(ctx, record)
 	if err := result.FirstErr(); err != nil {
 		_ = p.client.EndTransaction(ctx, kgo.TryAbort)
-		p.logger.Errorw("Producer не отправил транзакцию", "error", err)
+		p.logger.Errorw("producer failed to send a transaction", "error", err)
 		return err
 	}
 
 	if err := p.client.EndTransaction(ctx, kgo.TryCommit); err != nil {
-		p.logger.Errorw("Producer не закомиттил транзакцию", "error", err)
+		p.logger.Errorw("producer failed to commit a transaction", "error", err)
 		return err
 	}
 

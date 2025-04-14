@@ -37,8 +37,8 @@ func NewOutboxWorker(
 }
 
 func (w *OutboxWorker) Run(ctx context.Context) {
-	w.logger.Info("Outbox worker запущен")
-	defer w.logger.Info("Outbox worker остановлен")
+	w.logger.Info("outbox worker started")
+	defer w.logger.Info("outbox worker stopped")
 
 	ticker := time.NewTicker(w.pollInterval)
 	defer ticker.Stop()
@@ -56,19 +56,19 @@ func (w *OutboxWorker) Run(ctx context.Context) {
 func (w *OutboxWorker) processBatch(ctx context.Context) {
 	tx, err := w.service.BeginTx(ctx)
 	if err != nil {
-		w.logger.Errorw("Не смог начать транзакцию", "error", err)
+		w.logger.Errorw("failed to start tx", "error", err)
 		return
 	}
 	defer tx.Rollback(ctx)
 
 	tasks, err := w.service.FetchPendingTasksTx(ctx, tx, w.batchSize)
 	if err != nil {
-		w.logger.Errorw("Не смог получить таски", "error", err)
+		w.logger.Errorw("failed to fetch tasks", "error", err)
 		return
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		w.logger.Errorw("Не смог закоммитить транзакцию", "error", err)
+		w.logger.Errorw("failed to commit tx", "error", err)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (w *OutboxWorker) processBatch(ctx context.Context) {
 			return
 		default:
 			if err := w.processTask(ctx, task); err != nil {
-				w.logger.Errorw("Не смог обработать таск",
+				w.logger.Errorw("failed to process a task",
 					"task_id", task.ID,
 					"error", err)
 			}

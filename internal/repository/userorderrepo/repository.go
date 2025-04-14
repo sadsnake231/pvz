@@ -27,7 +27,7 @@ func (r *userOrderRepository) IssueOrders(ctx context.Context, userID string, or
 	result, err := r.userOrderStorage.IssueOrders(ctx, userID, orderIDs)
 	if err != nil {
 		if errors.Is(err, domain.ErrDatabase) {
-			r.logger.Error("Не удалось выдать заказ",
+			r.logger.Error("failed to issue the order",
 				zap.Error(err),
 				zap.String("userID", userID),
 				zap.Strings("orderIDs", orderIDs),
@@ -43,7 +43,7 @@ func (r *userOrderRepository) RefundOrders(ctx context.Context, userID string, o
 	result, err := r.userOrderStorage.RefundOrders(ctx, userID, orderIDs)
 	if err != nil {
 		if errors.Is(err, domain.ErrDatabase) {
-			r.logger.Error("Не удалось вернуть заказ",
+			r.logger.Error("failed to refund the order",
 				zap.Error(err),
 				zap.String("userID", userID),
 				zap.Strings("orderIDs", orderIDs),

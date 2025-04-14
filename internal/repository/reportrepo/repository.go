@@ -37,7 +37,7 @@ func (r *reportRepository) GetUserOrders(
 ) ([]domain.Order, string, error) {
 	res, newCursor, err := r.reportOrderStorage.GetUserOrders(ctx, userID, limit, cursor, status)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return res, newCursor, domain.ErrDatabase
 	}
 	return res, newCursor, err
@@ -50,7 +50,7 @@ func (r *reportRepository) GetRefundedOrders(
 ) ([]domain.Order, string, error) {
 	res, newCursor, err := r.reportOrderStorage.GetRefundedOrders(ctx, limit, cursor)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return res, newCursor, domain.ErrDatabase
 	}
 
@@ -65,7 +65,7 @@ func (r *reportRepository) GetOrderHistory(
 ) ([]domain.Order, string, error) {
 	res, newCursor, err := r.reportOrderStorage.GetOrderHistory(ctx, limit, lastUpdatedCursor, idCursor)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return res, newCursor, domain.ErrDatabase
 	}
 
@@ -75,7 +75,7 @@ func (r *reportRepository) GetOrderHistory(
 func (r *reportRepository) GetHistoryOrderIDs(ctx context.Context) ([]string, error) {
 	orderIDs, err := r.reportOrderStorage.GetHistoryOrderIDs(ctx)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return orderIDs, domain.ErrDatabase
 	}
 
@@ -85,7 +85,7 @@ func (r *reportRepository) GetHistoryOrderIDs(ctx context.Context) ([]string, er
 func (r *reportRepository) GetAllActiveOrderIDs(ctx context.Context) ([]string, error) {
 	orderIDs, err := r.reportOrderStorage.GetAllActiveOrderIDs(ctx)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return orderIDs, domain.ErrDatabase
 	}
 
@@ -95,7 +95,7 @@ func (r *reportRepository) GetAllActiveOrderIDs(ctx context.Context) ([]string, 
 func (r *reportRepository) GetUserActiveOrderIDs(ctx context.Context, userID string) ([]string, error) {
 	orderIDs, err := r.reportOrderStorage.GetUserActiveOrderIDs(ctx, userID)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return orderIDs, domain.ErrDatabase
 	}
 
@@ -105,7 +105,7 @@ func (r *reportRepository) GetUserActiveOrderIDs(ctx context.Context, userID str
 func (r *reportRepository) GetAllOrders(ctx context.Context) ([]domain.Order, error) {
 	orders, err := r.reportOrderStorage.GetAllOrders(ctx)
 	if err != nil {
-		r.logger.Error("ошибка вывода заказов", zap.Error(err))
+		r.logger.Error("failed to get orders", zap.Error(err))
 		return orders, domain.ErrDatabase
 	}
 
