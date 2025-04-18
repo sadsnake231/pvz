@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package transport.grpc.auth;
+option go_package = "gitlab.ozon.dev/sadsnake231/homework/internal/transport/grpc/gen/auth";
+
+service AuthHandler {
+  rpc Signup(SignupRequest) returns (SignupResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message SignupRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SignupResponse {
+  string message = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string message = 1;
+  string token = 2;
+}

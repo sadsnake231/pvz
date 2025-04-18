@@ -4,6 +4,11 @@ GO_MOD_PATH=go.mod
 LINT_THRESHOLD=10
 GOBIN=$(CURDIR)/bin
 POSTGRES_URL = "postgres://test:test@localhost:5432/testdb?sslmode=disable"
+PROTO_GEN_DIR=./internal/transport/grpc/gen
+PROTO_PATH=./proto
+PROTO_DOCS_DIR=./docs
+PROTO_AUTH_PATH=./proto/auth/auth.proto
+PROTO_ORDER_PATH=./proto/order/order.proto
 
 export GOBIN
 
@@ -66,15 +71,18 @@ migrate:
 
 generate-proto:
 	protoc \
-		--go_out=./internal/transport/grpc/gen \
-		--go-grpc_out=./internal/transport/grpc/gen \
+		--go_out=$(PROTO_GEN_DIR) \
+		--go-grpc_out=$(PROTO_GEN_DIR) \
 		--go_opt=paths=source_relative \
 		--go-grpc_opt=paths=source_relative \
-		--proto_path=./internal/transport/grpc \
-		./internal/transport/grpc/api.proto
+		--proto_path=$(PROTO_PATH) \
+		$(PROTO_AUTH_PATH) \
+		$(PROTO_ORDER_PATH)
 gen-docs:
-	protoc --doc_out=./docs --doc_opt=html,grpc-api.html \
-  	-I. ./internal/transport/grpc/api.proto
+	protoc --doc_out=$(PROTO_DOCS_DIR) --doc_opt=html,index.html \
+  	--proto_path=$(PROTO_PATH) \
+  	$(PROTO_AUTH_PATH) \
+  	$(PROTO_ORDER_PATH)
 help:
 	@echo "Доступные команды:"
 	@echo "  make build         		- Собрать приложение"

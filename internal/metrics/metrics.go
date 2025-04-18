@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -82,7 +84,7 @@ var (
 
 	RequestCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "api_requests_total",
+			Name: "api_requests_count",
 			Help: "Total number of API requests",
 		},
 		[]string{"method", "status"},
@@ -122,7 +124,7 @@ var (
 	OrdersByStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "orders_by_status",
-			Help: "Current number of orders by status",
+			Help: "Total number of orders by status",
 		},
 		[]string{"status"},
 	)
@@ -163,4 +165,48 @@ func RegisterMetrics() error {
 	}
 
 	return nil
+}
+
+func IncHTTPRequest(method string) {
+	HTTPRequestCount.WithLabelValues(method, "unary").Inc()
+}
+
+func IncHTTPResponse(status, method string) {
+	HTTPResponseStatusCount.WithLabelValues(status, method).Inc()
+}
+
+func IncRequestsInFlight(method string) {
+	RequestsInFlight.WithLabelValues(method).Inc()
+}
+
+func DecRequestsInFlight(method string) {
+	RequestsInFlight.WithLabelValues(method).Dec()
+}
+
+func ObserveAPIResponseTime(method, status string, duration time.Duration) {
+	APIResponseTime.WithLabelValues(method, "unary", status).Observe(duration.Seconds())
+}
+
+func IncRequestCount(method, status string) {
+	RequestCount.WithLabelValues(method, status).Inc()
+}
+
+func ObserveOrderValue(value float64) {
+	OrderValueDistribution.Observe(value)
+}
+
+func ObserveOrderWeight(weight float64) {
+	OrderWeightDistribution.Observe(weight)
+}
+
+func IncOrderReturns() {
+	OrderReturns.Inc()
+}
+
+func IncFailedOrderCount() {
+	FailedOrderCount.Inc()
+}
+
+func IncOrdersByStatus(status string) {
+	OrdersByStatus.WithLabelValues(status).Inc()
 }

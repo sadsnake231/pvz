@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewDatabase(connStr string) (*pgxpool.Pool, error) {
+func NewDatabase(ctx context.Context, connStr string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, err
@@ -17,7 +17,7 @@ func NewDatabase(connStr string) (*pgxpool.Pool, error) {
 		otelpgx.WithTrimSQLInSpanName(),
 	)
 
-	db, err := pgxpool.NewWithConfig(context.Background(), config)
+	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}

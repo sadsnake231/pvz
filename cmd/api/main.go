@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/api"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
@@ -32,6 +33,9 @@ import (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	cfg := config.Load()
 
 	baseLogger, err := zap.NewProduction()
@@ -41,17 +45,20 @@ func main() {
 	}
 	defer logger.Sync()
 
-	tp, err := tracing.InitTracer(cfg.JaegerServiceName, cfg.JaegerURL)
+	tp, err := tracing.InitTracer(ctx, cfg.JaegerServiceName, cfg.JaegerURL)
 	if err != nil {
 		logger.Fatalf("failed to init tracer: %v", err)
 	}
 	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := tp.Shutdown(shutdownCtx); err != nil {
 			logger.Errorf("error shutting down tracer: %v", err)
 		}
 	}()
 
-	db, err := database.NewDatabase(cfg.DatabaseURL)
+	db, err := database.NewDatabase(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Fatal("failed to init database", zap.Error(err))
 	}
@@ -95,9 +102,6 @@ func main() {
 	if err != nil {
 		logger.Fatalw("failed to init Kafka Producer", "error", err)
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
 
 	outboxWorker := audit.NewOutboxWorker(auditService, kafkaProducer, logger)
 	go outboxWorker.Run(ctx)

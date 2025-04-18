@@ -11,11 +11,9 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
-func InitTracer(serviceName, connStr string) (*sdktrace.TracerProvider, error) {
-	ctx := context.Background()
-
+func InitTracer(ctx context.Context, serviceName, connStr string) (*sdktrace.TracerProvider, error) {
 	exporter, err := otlptracehttp.New(ctx,
-		otlptracehttp.WithEndpoint("localhost:4318"),
+		otlptracehttp.WithEndpoint(connStr),
 		otlptracehttp.WithInsecure(),
 		otlptracehttp.WithURLPath("/v1/traces"),
 	)

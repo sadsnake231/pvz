@@ -5,7 +5,8 @@ import (
 
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/audit"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
-	grpcapi "gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen/auth"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen/order"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/handler"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/interceptor"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -36,8 +37,8 @@ func NewServer(
 	orderHandler := handler.NewOrderHandler(orderService, auditPipeline)
 	authHandler := handler.NewAuthHandler(authService, logger)
 
-	grpcapi.RegisterOrderHandlerServer(grpcServer, orderHandler)
-	grpcapi.RegisterAuthHandlerServer(grpcServer, authHandler)
+	order.RegisterOrderHandlerServer(grpcServer, orderHandler)
+	auth.RegisterAuthHandlerServer(grpcServer, authHandler)
 
 	return &Server{
 		server: grpcServer,

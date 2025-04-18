@@ -12,14 +12,13 @@ import (
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/domain"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/metrics"
 	"gitlab.ozon.dev/sadsnake2311/homework/internal/service"
-	grpcapi "gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen"
+	"gitlab.ozon.dev/sadsnake2311/homework/internal/transport/grpc/gen/order"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type OrderHandler struct {
-	grpcapi.UnimplementedOrderHandlerServer
+	order.UnimplementedOrderHandlerServer
 	service  service.OrderService
 	pipeline *audit.Pipeline
 }
@@ -28,15 +27,15 @@ func NewOrderHandler(service service.OrderService, pipeline *audit.Pipeline) *Or
 	return &OrderHandler{service: service, pipeline: pipeline}
 }
 
-func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrderRequest) (*grpcapi.AcceptOrderResponse, error) {
-	expiry, err := time.Parse("2006-1-02", req.GetExpiry())
+func (h *OrderHandler) AcceptOrder(ctx context.Context, req *order.AcceptOrderRequest) (*order.AcceptOrderResponse, error) {
+	expiry, err := time.Parse("2006-01-02", req.GetExpiry())
 	if err != nil {
 		metrics.FailedOrderCount.Inc()
 		return nil, status.Errorf(codes.InvalidArgument, "неправильный формат времени: %v", err)
 	}
 
 	storedAt := time.Now().UTC()
-	order := domain.Order{
+	orderToAccept := domain.Order{
 		ID:          req.GetId(),
 		RecipientID: req.GetRecipientId(),
 		Expiry:      expiry.Add(24 * time.Hour).UTC(),
@@ -46,7 +45,7 @@ func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrder
 		StoredAt:    &storedAt,
 	}
 
-	if err := h.service.AcceptOrder(ctx, order); err != nil {
+	if err := h.service.AcceptOrder(ctx, orderToAccept); err != nil {
 		metrics.FailedOrderCount.Inc()
 		return nil, convertOrderError(err)
 	}
@@ -56,14 +55,14 @@ func (h *OrderHandler) AcceptOrder(ctx context.Context, req *grpcapi.AcceptOrder
 		"status":   domain.StatusStored,
 	})
 
-	metrics.OrderValueDistribution.Observe(req.GetBasePrice())
-	metrics.OrderWeightDistribution.Observe(req.GetWeight())
-	metrics.OrdersByStatus.WithLabelValues("stored").Inc()
+	metrics.ObserveOrderValue(req.GetBasePrice())
+	metrics.ObserveOrderWeight(req.GetWeight())
+	metrics.IncOrdersByStatus("stored")
 
-	return &grpcapi.AcceptOrderResponse{Message: "заказ принят"}, nil
+	return &order.AcceptOrderResponse{Message: "заказ принят"}, nil
 }
 
-func (h *OrderHandler) ReturnOrder(ctx context.Context, req *grpcapi.ReturnOrderRequest) (*grpcapi.ReturnOrderResponse, error) {
+func (h *OrderHandler) ReturnOrder(ctx context.Context, req *order.ReturnOrderRequest) (*order.ReturnOrderResponse, error) {
 	if req.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "нужно указать order id")
 	}
@@ -77,14 +76,12 @@ func (h *OrderHandler) ReturnOrder(ctx context.Context, req *grpcapi.ReturnOrder
 		"status":   "Deleted",
 	})
 
-	metrics.OrderReturns.Inc()
-	metrics.OrdersByStatus.WithLabelValues("stored").Dec()
-	metrics.OrdersByStatus.WithLabelValues("refunded").Dec()
+	metrics.IncOrderReturns()
 
-	return &grpcapi.ReturnOrderResponse{Message: "заказ удален"}, nil
+	return &order.ReturnOrderResponse{Message: "заказ удален"}, nil
 }
 
-func (h *OrderHandler) IssueRefundOrders(ctx context.Context, req *grpcapi.IssueRefundRequest) (*grpcapi.IssueRefundResponse, error) {
+func (h *OrderHandler) IssueRefundOrders(ctx context.Context, req *order.IssueRefundRequest) (*order.IssueRefundResponse, error) {
 	var (
 		result      *service.IssueRefundResponse
 		err         error
@@ -114,22 +111,20 @@ func (h *OrderHandler) IssueRefundOrders(ctx context.Context, req *grpcapi.Issue
 
 		switch orderStatus {
 		case "issue":
-			metrics.OrdersByStatus.WithLabelValues("stored").Dec()
-			metrics.OrdersByStatus.WithLabelValues("issued").Inc()
+			metrics.IncOrdersByStatus("issued")
 		case "refund":
-			metrics.OrdersByStatus.WithLabelValues("issued").Dec()
-			metrics.OrdersByStatus.WithLabelValues("refunded").Inc()
+			metrics.IncOrdersByStatus("refunded")
 		}
 	}
 
-	return &grpcapi.IssueRefundResponse{
+	return &order.IssueRefundResponse{
 		ProcessedOrderIds: result.ProcessedOrderIDs,
 		FailedOrderIds:    result.FailedOrderIds,
 		Error:             result.Error,
 	}, nil
 }
 
-func (h *OrderHandler) GetUserOrders(ctx context.Context, req *grpcapi.GetUserOrdersRequest) (*grpcapi.GetUserOrdersResponse, error) {
+func (h *OrderHandler) GetUserOrders(ctx context.Context, req *order.GetUserOrdersRequest) (*order.GetUserOrdersResponse, error) {
 	var cursorInt *int
 	if cursor := req.GetCursor(); cursor != "" {
 		val, err := strconv.Atoi(cursor)
@@ -153,7 +148,7 @@ func (h *OrderHandler) GetUserOrders(ctx context.Context, req *grpcapi.GetUserOr
 
 	domainOrders := convertServiceOrdersToDomain(orders)
 
-	return &grpcapi.GetUserOrdersResponse{
+	return &order.GetUserOrdersResponse{
 		Orders:     convertOrdersToPB(domainOrders),
 		NextCursor: nextCursor,
 	}, nil
@@ -161,8 +156,8 @@ func (h *OrderHandler) GetUserOrders(ctx context.Context, req *grpcapi.GetUserOr
 
 func (h *OrderHandler) GetRefundedOrders(
 	ctx context.Context,
-	req *grpcapi.GetRefundedOrdersRequest,
-) (*grpcapi.GetRefundedOrdersResponse, error) {
+	req *order.GetRefundedOrdersRequest,
+) (*order.GetRefundedOrdersResponse, error) {
 	var cursorInt *int
 	if cursor := req.GetCursor(); cursor != "" {
 		val, err := strconv.Atoi(cursor)
@@ -184,7 +179,7 @@ func (h *OrderHandler) GetRefundedOrders(
 
 	domainOrders := convertServiceOrdersToDomain(orders)
 
-	return &grpcapi.GetRefundedOrdersResponse{
+	return &order.GetRefundedOrdersResponse{
 		Orders:     convertOrdersToPB(domainOrders),
 		NextCursor: nextCursor,
 	}, nil
@@ -192,8 +187,8 @@ func (h *OrderHandler) GetRefundedOrders(
 
 func (h *OrderHandler) GetOrderHistory(
 	ctx context.Context,
-	req *grpcapi.GetOrderHistoryRequest,
-) (*grpcapi.GetOrderHistoryResponse, error) {
+	req *order.GetOrderHistoryRequest,
+) (*order.GetOrderHistoryResponse, error) {
 	lastUpdatedCursor, err := time.Parse(time.RFC3339, req.GetLastUpdatedCursor())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "неверный формат курсора: %v", err)
@@ -213,7 +208,7 @@ func (h *OrderHandler) GetOrderHistory(
 
 	domainOrders := convertServiceOrdersToDomain(orders)
 
-	return &grpcapi.GetOrderHistoryResponse{
+	return &order.GetOrderHistoryResponse{
 		Orders:     convertOrdersToPB(domainOrders),
 		NextCursor: formatCursor(nextCursor),
 	}, nil
@@ -232,8 +227,8 @@ func formatCursor(cursor string) string {
 
 func (h *OrderHandler) GetUserActiveOrders(
 	ctx context.Context,
-	req *grpcapi.GetUserActiveOrdersRequest,
-) (*grpcapi.GetUserActiveOrdersResponse, error) {
+	req *order.GetUserActiveOrdersRequest,
+) (*order.GetUserActiveOrdersResponse, error) {
 	if req.GetUserId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "нужно указать user_id")
 	}
@@ -243,41 +238,41 @@ func (h *OrderHandler) GetUserActiveOrders(
 		return nil, convertOrderError(err)
 	}
 
-	return &grpcapi.GetUserActiveOrdersResponse{
+	return &order.GetUserActiveOrdersResponse{
 		Orders: convertOrdersToPB(orders),
 	}, nil
 }
 
 func (h *OrderHandler) GetAllActiveOrders(
 	ctx context.Context,
-	_ *emptypb.Empty,
-) (*grpcapi.GetAllActiveOrdersResponse, error) {
+	_ *order.GetAllActiveOrdersRequest,
+) (*order.GetAllActiveOrdersResponse, error) {
 	orders, err := h.service.GetAllActiveOrders(ctx)
 	if err != nil {
 		return nil, convertOrderError(err)
 	}
 
-	return &grpcapi.GetAllActiveOrdersResponse{
+	return &order.GetAllActiveOrdersResponse{
 		Orders: convertOrdersToPB(orders),
 	}, nil
 }
 
 func (h *OrderHandler) GetOrderHistoryV2(
 	ctx context.Context,
-	_ *emptypb.Empty,
-) (*grpcapi.GetOrderHistoryV2Response, error) {
+	_ *order.GetOrderHistoryV2Request,
+) (*order.GetOrderHistoryV2Response, error) {
 	orders, err := h.service.GetOrderHistoryV2(ctx)
 	if err != nil {
 		return nil, convertOrderError(err)
 	}
 
-	return &grpcapi.GetOrderHistoryV2Response{Orders: convertOrdersToPB(orders)}, nil
+	return &order.GetOrderHistoryV2Response{Orders: convertOrdersToPB(orders)}, nil
 }
 
-func convertOrdersToPB(orders []domain.Order) []*grpcapi.Order {
-	pbOrders := make([]*grpcapi.Order, 0, len(orders))
+func convertOrdersToPB(orders []domain.Order) []*order.Order {
+	pbOrders := make([]*order.Order, 0, len(orders))
 	for _, o := range orders {
-		pbOrder := &grpcapi.Order{
+		pbOrder := &order.Order{
 			Id:          o.ID,
 			RecipientId: o.RecipientID,
 			Expiry:      o.Expiry.Format(time.RFC3339),

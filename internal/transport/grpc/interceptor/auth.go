@@ -13,8 +13,7 @@ import (
 )
 
 func AuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	if info.FullMethod == "/transport.grpc.AuthHandler/Login" ||
-		info.FullMethod == "/transport.grpc.AuthHandler/Signup" {
+	if shouldSkipAuth(info.FullMethod) {
 		return handler(ctx, req)
 	}
 
@@ -23,19 +22,39 @@ func AuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, h
 		return nil, status.Error(codes.Unauthenticated, "отсутствуют метаданные")
 	}
 
-	authHeader := md.Get("authorization")
-	if len(authHeader) == 0 {
-		return nil, status.Error(codes.Unauthenticated, "отсутствует заголовок авторизации")
+	tokenString, err := extractTokenFromMetadata(md)
+	if err != nil {
+		return nil, err
 	}
 
-	tokenString := strings.TrimPrefix(authHeader[0], "Bearer ")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		return []byte(domain.JwtSecret), nil
-	})
-
-	if err != nil || !token.Valid {
+	token, err := jwt.Parse(tokenString, jwtKeyFunc)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "ошибка проверки токена: %v", err)
+	}
+	if !token.Valid {
 		return nil, status.Error(codes.Unauthenticated, "неверный токен")
 	}
 
 	return handler(ctx, req)
+}
+
+func shouldSkipAuth(fullMethod string) bool {
+	skipMethods := map[string]bool{
+		"/transport.grpc.auth.AuthHandler/Login":  true,
+		"/transport.grpc.auth.AuthHandler/Signup": true,
+	}
+	return skipMethods[fullMethod]
+}
+
+func extractTokenFromMetadata(md metadata.MD) (string, error) {
+	authHeader := md.Get("authorization")
+	if len(authHeader) == 0 {
+		return "", status.Error(codes.Unauthenticated, "отсутствует заголовок авторизации")
+	}
+
+	return strings.TrimPrefix(authHeader[0], "Bearer "), nil
+}
+
+func jwtKeyFunc(token *jwt.Token) (any, error) {
+	return []byte(domain.JwtSecret), nil
 }

@@ -11,10 +11,7 @@ import (
 
 func AuditInterceptor(p *audit.Pipeline) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		metrics.HTTPRequestCount.WithLabelValues(
-			info.FullMethod,
-			"unary",
-		).Inc()
+		metrics.IncHTTPRequest(info.FullMethod)
 
 		p.SendEvent(domain.EventAPIRequest, map[string]any{
 			"method": info.FullMethod,
@@ -27,10 +24,7 @@ func AuditInterceptor(p *audit.Pipeline) grpc.UnaryServerInterceptor {
 			status = "Error"
 		}
 
-		metrics.HTTPResponseStatusCount.WithLabelValues(
-			status,
-			info.FullMethod,
-		).Inc()
+		metrics.IncHTTPResponse(status, info.FullMethod)
 
 		p.SendEvent(domain.EventAPIResponse, map[string]any{
 			"method": info.FullMethod,

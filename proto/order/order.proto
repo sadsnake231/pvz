@@ -1,9 +1,7 @@
 syntax = "proto3";
 
 package transport.grpc;
-option go_package = "gitlab.ozon.dev/sadsnake231/homework/internal/transport/grpc/gen;grpcapi";
-
-import "google/protobuf/empty.proto";
+option go_package = "gitlab.ozon.dev/sadsnake231/homework/internal/transport/grpc/gen/order";
 
 service OrderHandler {
   // Orders
@@ -18,13 +16,8 @@ service OrderHandler {
   rpc GetRefundedOrders(GetRefundedOrdersRequest) returns (GetRefundedOrdersResponse);
   rpc GetOrderHistory(GetOrderHistoryRequest) returns (GetOrderHistoryResponse);
   rpc GetUserActiveOrders(GetUserActiveOrdersRequest) returns (GetUserActiveOrdersResponse);
-  rpc GetAllActiveOrders(google.protobuf.Empty) returns (GetAllActiveOrdersResponse);
-  rpc GetOrderHistoryV2(google.protobuf.Empty) returns (GetOrderHistoryV2Response);
-}
-
-service AuthHandler {
-  rpc Signup(SignupRequest) returns (SignupResponse);
-  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc GetAllActiveOrders(GetAllActiveOrdersRequest) returns (GetAllActiveOrdersResponse);
+  rpc GetOrderHistoryV2(GetOrderHistoryV2Request) returns (GetOrderHistoryV2Response);
 }
 
 message AcceptOrderRequest {
@@ -101,8 +94,16 @@ message GetUserActiveOrdersResponse {
   repeated Order orders = 1;
 }
 
+message GetAllActiveOrdersRequest {
+  string cursor = 1;
+}
+
 message GetAllActiveOrdersResponse {
   repeated Order orders = 1;
+}
+
+message GetOrderHistoryV2Request {
+    string cursor = 1;
 }
 
 message GetOrderHistoryV2Response {
@@ -116,23 +117,4 @@ message Order {
   double base_price = 4;
   double weight = 5;
   string packaging = 6;
-}
-
-message SignupRequest {
-  string email = 1;
-  string password = 2;
-}
-
-message SignupResponse {
-  string message = 1;
-}
-
-message LoginRequest {
-  string email = 1;
-  string password = 2;
-}
-
-message LoginResponse {
-  string message = 1;
-  string token = 2;
 }

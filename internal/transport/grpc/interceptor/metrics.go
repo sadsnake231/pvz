@@ -10,25 +10,16 @@ import (
 )
 
 func MetricsInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	metrics.RequestsInFlight.WithLabelValues(info.FullMethod).Inc()
-	defer metrics.RequestsInFlight.WithLabelValues(info.FullMethod).Dec()
+	metrics.IncRequestsInFlight(info.FullMethod)
+	defer metrics.DecRequestsInFlight(info.FullMethod)
 
 	start := time.Now()
-
 	resp, err := handler(ctx, req)
-	duration := time.Since(start).Seconds()
+	duration := time.Since(start)
 	statusCode := status.Code(err).String()
 
-	metrics.APIResponseTime.WithLabelValues(
-		info.FullMethod,
-		"unary",
-		statusCode,
-	).Observe(duration)
-
-	metrics.RequestCount.WithLabelValues(
-		info.FullMethod,
-		statusCode,
-	).Inc()
+	metrics.ObserveAPIResponseTime(info.FullMethod, statusCode, duration)
+	metrics.IncRequestCount(info.FullMethod, statusCode)
 
 	return resp, err
 }
